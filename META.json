@@ -1,0 +1,53 @@
+{
+   "abstract" : "Debug perl wihle its running.",
+   "author" : [
+      "Tim Potapov <tim.potapov[AT]gmail.com>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Module::Build version 0.4231",
+   "license" : [
+      "artistic_2"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : 2
+   },
+   "name" : "Runtime-Debugger",
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.4004"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "perl" : "5.012"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      }
+   },
+   "provides" : {
+      "Runtime::Debugger" : {
+         "file" : "lib/Runtime/Debugger.pm",
+         "version" : "0.01"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/poti1/runtime-debugger/issues"
+      },
+      "license" : [
+         "http://opensource.org/licenses/artistic-license-2.0.php"
+      ],
+      "repository" : {
+         "url" : "https://github.com/poti1/runtime-debugger"
+      }
+   },
+   "version" : "0.01",
+   "x_serialization_backend" : "JSON::PP version 4.06"
+}
