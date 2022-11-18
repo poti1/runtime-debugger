@@ -50,17 +50,23 @@ sub run {
 
 
 sub _step {
+    local $SIG{INT}  = sub { say "Type 'q' to quit" };
+    local $SIG{TERM} = sub { say "Type 'q' to quit" };
+    local $SIG{HUP}  = sub { say "Type 'q' to quit" };
     $Runtime::Debugger::TERM //= Term::ReadLine->new( "Runtime::Debugger" );
 
     my $input = $TERM->readline( "perl>" );
 
-    die "Exit\n" if $input =~ / ^ (?: exit | quit | q ) $ /x;
+    Runtime::Debugger->_exit if $input eq 'q';
 
+    # Tab completion.
     # compgen -W '\$Selenium \$Editor exit quit q' '$E'
-    # Term::ReadKey. Tab completion.
-    # Up and down arrows to scroll through history.
 
     $input;
+}
+
+sub _exit {
+    die "Exit\n";
 }
 
 =head2 p
