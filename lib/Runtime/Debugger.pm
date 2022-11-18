@@ -52,7 +52,7 @@ sub run {
 sub _step {
     $Runtime::Debugger::TERM //= Term::ReadLine->new( "Runtime::Debugger" );
 
-    my $input = $TERM->readline( colored( "perl>", "GREEN" ) );
+    my $input = $TERM->readline( "perl>" );
 
     exit if $input =~ / ^ (?: exit | quit | q ) $ /x;
 

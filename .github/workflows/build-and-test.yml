@@ -50,8 +50,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        distribution: [default, strawberry]
+        os: [ubuntu-latest, macos-latest ]
+        distribution: [ default ]
         perl-version:
           - "5.12"
           - "5.14"
@@ -67,15 +67,6 @@ jobs:
           - "5.34"
           - "5.36"
         exclude:
-          - { os: windows-latest, distribution: default }
-          - { os: macos-latest,   distribution: strawberry }
-          - { os: ubuntu-latest,  distribution: strawberry }
-          - { distribution: strawberry, perl-version: "5.8" }
-          - { distribution: strawberry, perl-version: "5.10" }
-          - { distribution: strawberry, perl-version: "5.12" }
-          - { distribution: strawberry, perl-version: "5.14" }
-          - { distribution: strawberry, perl-version: "5.34" }
-          - { distribution: strawberry, perl-version: "5.36" }
     runs-on: ${{ matrix.os }}
     name:  on ${{ matrix.os }} perl ${{ matrix.perl-version }}
     steps:
