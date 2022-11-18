@@ -54,7 +54,7 @@ sub _step {
 
     my $input = $TERM->readline( "perl>" );
 
-    exit if $input =~ / ^ (?: exit | quit | q ) $ /x;
+    die "Exit\n" if $input =~ / ^ (?: exit | quit | q ) $ /x;
 
     # compgen -W '\$Selenium \$Editor exit quit q' '$E'
     # Term::ReadKey. Tab completion.
