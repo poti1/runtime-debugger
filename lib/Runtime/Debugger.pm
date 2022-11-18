@@ -63,7 +63,7 @@ sub _step {
         # );
 
         # Preload history.
-        $TERM->AddHistory( 'say $v', 'p $v', );
+        # $TERM->AddHistory( 'say $v', 'p $v', );
     }
 
     my $input = $TERM->readline( "perl>" ) // '';
