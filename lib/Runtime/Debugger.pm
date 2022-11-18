@@ -48,14 +48,25 @@ sub run {
     "eval Runtime::Debugger->_step while 1";
 }
 
-
 sub _step {
-    local $SIG{INT}  = sub { say "Type 'q' to quit" };
-    local $SIG{TERM} = sub { say "Type 'q' to quit" };
-    local $SIG{HUP}  = sub { say "Type 'q' to quit" };
-    $Runtime::Debugger::TERM //= Term::ReadLine->new( "Runtime::Debugger" );
+    local $SIG{INT}  = \&Runtime::Debugger::_interrupt;
+    local $SIG{TERM} = \&Runtime::Debugger::_interrupt;
+    local $SIG{HUP}  = \&Runtime::Debugger::_interrupt;
 
-    my $input = $TERM->readline( "perl>" );
+    if ( not $Runtime::Debugger::TERM ) {
+        $TERM = Term::ReadLine->new( "Runtime::Debugger" );
+
+        # $TERM->bind_key(
+        #         ord "\ci",
+        #     sub { say "HERE" }
+        #   # \&Runtime::Debugger::_interrupt,
+        # );
+
+        # Preload history.
+        $TERM->AddHistory( 'say $v', 'p $v', );
+    }
+
+    my $input = $TERM->readline( "perl>" ) // '';
 
     Runtime::Debugger->_exit if $input eq 'q';
 
@@ -63,6 +74,10 @@ sub _step {
     # compgen -W '\$Selenium \$Editor exit quit q' '$E'
 
     $input;
+}
+
+sub _interrupt {
+    say "Type 'q' to quit";
 }
 
 sub _exit {
