@@ -3,6 +3,17 @@ package Runtime::Debugger;
 use 5.012;
 use strict;
 use warnings;
+use Data::Dumper;
+use Term::ANSIColor qw( colored );
+use Term::ReadLine;
+use feature 'say';
+use parent 'Exporter';
+
+our $TERM;
+our @EXPORT = qw(
+  run
+  p
+);
 
 =head1 NAME
 
@@ -22,31 +33,55 @@ our $VERSION = '0.01';
 Run a REPL debugger in the current scope.
 
     use Runtime::Debugger;
-    Runtime::Debugger->run;
+    eval run;
 
 
 =head1 SUBROUTINES/METHODS
 
-=head2 run
+=head2 Run
 
 Runs the REPL.
 
 =cut
 
 sub run {
-    while(1){
-        printf "perl> ";
-        my $Input = <STDIN>;
-        chomp $Input;
+    "eval Runtime::Debugger->_step while 1";
+}
 
-        # compgen -W '\$Selenium \$Editor exit quit q' '$E'
-        # Term::ReadKey. Tab completion.
-        # Up and down arrows to scroll through history.
 
-        last if $Input =~ / ^ (?: exit | quit | q ) $ /x;
+sub _step {
+    $Runtime::Debugger::TERM //= Term::ReadLine->new( "Runtime::Debugger" );
 
-        eval "$Input";
-    }
+    my $input = $TERM->readline( colored( "perl>", "GREEN" ) );
+
+    exit if $input =~ / ^ (?: exit | quit | q ) $ /x;
+
+    # compgen -W '\$Selenium \$Editor exit quit q' '$E'
+    # Term::ReadKey. Tab completion.
+    # Up and down arrows to scroll through history.
+
+    $input;
+}
+
+=head2 p
+
+Data::Dumper::Dump anything.
+
+ p 123
+ p [1 ,2, 3]
+
+=cut
+
+sub p {
+    my $d = Data::Dumper
+      ->new( \@_ )
+      ->Sortkeys( 1 )
+      ->Terse( 1 )
+      ->Indent( 1 )
+      ->Maxdepth( 1 );
+
+    return $d->Dump if wantarray;
+    print $d->Dump;
 }
 
 =head1 AUTHOR
@@ -86,4 +121,4 @@ This is free software, licensed under:
 
 =cut
 
-1; # End of Runtime::Debugger
+1;    # End of Runtime::Debugger
