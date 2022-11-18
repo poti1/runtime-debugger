@@ -38,7 +38,7 @@ Run a REPL debugger in the current scope.
 
 =head1 SUBROUTINES/METHODS
 
-=head2 Run
+=head2 run
 
 Runs the REPL.
 
