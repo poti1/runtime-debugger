@@ -4,10 +4,12 @@ use 5.012;
 use strict;
 use warnings;
 use Data::Dumper;
-use Term::ANSIColor qw( colored );
 use Term::ReadLine;
+use Term::ANSIColor qw( colored );
+use PadWalker       qw( peek_my  );
 use feature 'say';
 use parent 'Exporter';
+use subs qw( p );
 
 our $TERM;
 our @EXPORT = qw(
@@ -21,11 +23,11 @@ Runtime::Debugger - Debug perl wihle its running.
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -55,12 +57,31 @@ sub _step {
 
     if ( not $Runtime::Debugger::TERM ) {
         $TERM = Term::ReadLine->new( "Runtime::Debugger" );
+        $TERM->ornaments( 0 );
+        $TERM->add_defun('custom-action', sub{
+            my($count, $key) = @_; 
+            $TERM->complete_internal( ord '*' );
+            return 0;       
+        });
+        $TERM->bind_key(ord "\cy", 'custom-action');
 
-        # $TERM->bind_key(
-        #         ord "\ci",
-        #     sub { say "HERE" }
-        #   # \&Runtime::Debugger::_interrupt,
-        # );
+        my $lexicals  = peek_my(1);
+        my @lex_names = sort keys %$lexicals;
+        my $attribs = $TERM->Attribs;
+
+      # $attribs->{completion_entry_function} = $attribs->{list_completion_function};
+        $attribs->{completion_word} = \@lex_names;
+        $attribs->{completion_function } = sub {
+            my ($text, $line, $start ) = @_;
+            say "\nFUNC text=[$text] line=[$line], start=[$start]";
+            p $TERM->completion_matches($text, $attribs->{'list_completion_function'} );
+        };
+      # $attribs->{attempted_completion_function } = sub {
+      #     my ($text, $line, $start, $end) = @_;
+      #     say "\nATTEMP: text=[$text] line=[$line], start=[$start], end=[$end]";
+      #     $TERM->completion_matches($text, $attribs->{'list_completion_function'} );
+      # };
+
 
         # Preload history.
         # $TERM->AddHistory( 'say $v', 'p $v', );
