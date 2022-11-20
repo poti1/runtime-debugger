@@ -84,7 +84,9 @@ Saves history locally.
 
 =head2 run
 
-Runs the REPL.
+Runs the REPL (dont forget eval!)
+
+ eval run
 
 Sets C<$@> to the exit reason like 'INT' (Control-C) or 'q' (Normal exit/quit).
 
