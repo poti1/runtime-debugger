@@ -40,11 +40,11 @@ Runtime::Debugger - Debug perl while its running.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 =head1 SYNOPSIS
@@ -76,11 +76,19 @@ Try with this command line:
 
     perl -MRuntime::Debugger -E 'my $str1 = "str-1"; my $str2 = "str-2"; my @arr1 = "arr-1"; my @arr2 = "arr-2"; my %hash1 = qw(hash 1); my %hash2 = qw(hash 2);  eval run; say $@'
 
-Press tab to autocomplete any lexical variables in scope.
+Press tab to autocomplete any lexical variables in scope (where "eval run" is found).
 
 Saves history locally.
 
+Can use 'p' to pretty print a variable or structure.
+
 =head1 SUBROUTINES/METHODS
+
+=cut
+
+#
+# API
+#
 
 =head2 run
 
@@ -92,15 +100,12 @@ Sets C<$@> to the exit reason like 'INT' (Control-C) or 'q' (Normal exit/quit).
 
 =cut
 
-#
-# API
-#
-
 sub run {
     <<'CODE';
     my $repl = Runtime::Debugger->_init;
     while ( 1 ) {
         eval $repl->_step;
+        $repl->_show_error($@) if $@;
     }
 CODE
 }
@@ -110,17 +115,39 @@ CODE
 Data::Dumper::Dump anything.
 
  p 123
- p [1 ,2, 3]
+ p [1, 2, 3]
+
+Can adjust the maxdepth (default is 1) to see with: "#Number".
+
+ p { a => [1, 2, 3] } #1
+
+Output:
+
+ {
+   'a' => 'ARRAY(0x55fd914a3d80)'
+ }
+
+Set maxdepth to '0' to show all nested structures.
 
 =cut
 
 sub p {
+
+    # Use same function to change maxdepth of whats shown.
+    my $maxdepth =
+      1;    # Good default to often having to change it during display.
+    if ( @_ > 1 and $_[-1] =~ / ^ --maxdepth=(\d+) $ /x )
+    {       # Like with "tree" command.
+        $maxdepth = $1;
+        pop @_;
+    }
+
     my $d = Data::Dumper
       ->new( \@_ )
       ->Sortkeys( 1 )
       ->Terse( 1 )
       ->Indent( 1 )
-      ->Maxdepth( 1 );
+      ->Maxdepth( $maxdepth );
 
     return $d->Dump if wantarray;
     print $d->Dump;
@@ -221,9 +248,23 @@ sub _step {
 
     my $input = $self->{term}->readline( "perl>" ) // '';
 
+    # Change '#1' to '--maxdepth=1'
+    if ( $input =~ / ^ p\b /x ) {
+        $input =~ s/ \s* \#(\d) \s* $ /, '--maxdepth=$1'/x;
+    }
+
     $self->_exit( $input ) if $input eq 'q';
 
     $input;
+}
+
+sub _show_error {
+    my ( $self, $error ) = @_;
+
+    # Remove eval line numbers.
+    $error =~ s/ at \(eval .+//;
+
+    say colored( $error, "RED" );
 }
 
 =head1 SEE ALSO
@@ -245,7 +286,15 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >>
 
 =head1 BUGS
 
-Please report any bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
+- no new lexicals
+
+Currently its not possible to create any new lexicals variables
+while I have not yet found a way to run "eval" with a higher scope of lexicals.
+(perhaps there is another way?perhaps there is another way?)
+
+You can make global variables though (with "our" keyword).
+
+Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
 
 =head1 SUPPORT

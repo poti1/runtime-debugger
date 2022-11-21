@@ -1,8 +1,11 @@
 Revision history for Runtime-Debugger
 
+0.03
+        2022-11-20 - Added maxdepth option when printing.
+        2022-11-20 - Displaying message now on error.
 0.02
-        2022-11-19 - Added lexical variable tab completion.
         2022-11-20 - Loading and saving history of commands.
+        2022-11-19 - Added lexical variable tab completion.
 0.01    2022-11-18
         First version, released on an unsuspecting world.
 

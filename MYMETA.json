@@ -1,5 +1,5 @@
 {
-   "abstract" : "Debug perl wihle its running.",
+   "abstract" : "Debug perl while its running.",
    "author" : [
       "Tim Potapov <tim.potapov[AT]gmail.com>"
    ],
@@ -35,7 +35,7 @@
    "provides" : {
       "Runtime::Debugger" : {
          "file" : "lib/Runtime/Debugger.pm",
-         "version" : "0.01"
+         "version" : "0.02"
       }
    },
    "release_status" : "stable",
@@ -50,6 +50,6 @@
          "url" : "https://github.com/poti1/runtime-debugger"
       }
    },
-   "version" : "0.01",
+   "version" : "0.02",
    "x_serialization_backend" : "JSON::PP version 4.06"
 }
