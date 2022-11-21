@@ -95,7 +95,7 @@ Can use 'p' to pretty print a variable or structure.
 
 Currently its not possible to create any new lexicals variables
 while I have not yet found a way to run "eval" with a higher scope of lexicals.
-(perhaps there is another way?perhaps there is another way?)
+(perhaps there is another way?)
 
 You can make global variables though if:
 
