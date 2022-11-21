@@ -1,5 +1,7 @@
 Revision history for Runtime-Debugger
 
+0.04
+        2022-11-21 - Added commands: help, history.
 0.03
         2022-11-20 - Added maxdepth option when printing.
         2022-11-20 - Displaying message now on error.

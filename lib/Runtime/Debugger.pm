@@ -23,36 +23,49 @@ use warnings;
 use Data::Dumper;
 use Term::ReadLine;
 use Term::ANSIColor qw( colored );
-use PadWalker       qw( peek_my  );
+use PadWalker       qw( peek_my  peek_our );
 use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( p uniq );
 
 our @EXPORT = qw(
   run
+  h
   p
+  hist
   uniq
 );
 
 =head1 NAME
 
-Runtime::Debugger - Debug perl while its running.
+Runtime::Debugger - Easy to use REPL with existing lexicals support.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 
 =head1 SYNOPSIS
 
+tl;dr - Easy to use REPL with existing lexicals support.
+
+(empahsis on "existing" since I have not yet found this support
+in others modules).
+
+Try with this command line:
+
+    perl -MRuntime::Debugger -E 'my $str1 = "str-1"; our $str2 = "str-2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2);  eval run; say $@'
+
+=head1 DESCRIPTION
+
 One can usually just do this:
 
  # Insert this where you want to pause:
- DB::single = 1;
+ $DB::single = 1;
 
  # Then run the perl debugger to navigate there quickly:
  PERLDBOPT='Nonstop' perl -d my_script
@@ -72,15 +85,23 @@ whereever you need like so:
                              # also being able to keep the lexical scope.
                              # Any ideas ? :)
 
-Try with this command line:
-
-    perl -MRuntime::Debugger -E 'my $str1 = "str-1"; my $str2 = "str-2"; my @arr1 = "arr-1"; my @arr2 = "arr-2"; my %hash1 = qw(hash 1); my %hash2 = qw(hash 2);  eval run; say $@'
-
 Press tab to autocomplete any lexical variables in scope (where "eval run" is found).
 
 Saves history locally.
 
 Can use 'p' to pretty print a variable or structure.
+
+=head2 New Variables
+
+Currently its not possible to create any new lexicals variables
+while I have not yet found a way to run "eval" with a higher scope of lexicals.
+(perhaps there is another way?perhaps there is another way?)
+
+You can make global variables though if:
+
+- By default ($var=123)
+- Using our (our $var=123)
+- Given the full path ($My::var = 123)
 
 =head1 SUBROUTINES/METHODS
 
@@ -108,6 +129,24 @@ sub run {
         $repl->_show_error($@) if $@;
     }
 CODE
+}
+
+=head2 h
+
+Show help section.
+
+=cut
+
+sub h {
+    say colored( <<"HELP", "YELLOW" );
+
+ h           - Show this help section.
+ q           - Quit debugger.
+ TAB         - Show available lexical variables.
+ p DATA [#N] - Prety print data (with optional depth),
+ hist [N=20] - Show last N commands.
+
+HELP
 }
 
 =head2 p
@@ -151,6 +190,40 @@ sub p {
 
     return $d->Dump if wantarray;
     print $d->Dump;
+}
+
+=head2 hist
+
+Show history of commands.
+
+By default will show 20 commands:
+
+ hist
+
+Same thing:
+
+ hist 20
+
+Can show more:
+
+ hist 50
+
+=cut
+
+sub hist {
+    my ( $self, $levels ) = @_;
+    $levels //= 20;
+    my @history = $self->_history;
+
+    if ( $levels < @history ) {
+        @history = splice @history, -$levels;
+    }
+
+    for my $index ( 0 .. $#history ) {
+        printf "%s %s\n",
+          colored( $index + 1,       "YELLOW" ),
+          colored( $history[$index], "GREEN" );
+    }
 }
 
 =head2 uniq
@@ -242,16 +315,35 @@ sub _step {
     my ( $self ) = @_;
 
     # Current lexical variables in scope.
+    # Note: this block could be moved to _init, but the intent
+    # was to be able to see newly added lexcicals
+    # (which does not seem to be possible).
+    #
+    # But global variable can be created and therefore it is
+    # best to keep this block here to run per command.
     my $lexicals = peek_my( 1 );
-    my @words    = sort keys %$lexicals;
+    my $globals  = peek_our( 1 );
+    my @words    = sort keys %$lexicals, keys %$globals;
     $self->{attribs}->{completion_word} = \@words;
 
     my $input = $self->{term}->readline( "perl>" ) // '';
 
     # Change '#1' to '--maxdepth=1'
     if ( $input =~ / ^ p\b /x ) {
-        $input =~ s/ \s* \#(\d) \s* $ /, '--maxdepth=$1'/x;
+        $input =~ s/
+            \s*
+            \#(\d)     #2 to --maxdepth=2
+            \s*
+        $ /, '--maxdepth=$1'/x;
     }
+
+    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
+    $input =~ s/ ^
+        (
+            hist
+        ) \b
+        (.*)
+    $ /\$repl->$1($2)/x;
 
     $self->_exit( $input ) if $input eq 'q';
 
@@ -266,6 +358,12 @@ sub _show_error {
 
     say colored( $error, "RED" );
 }
+
+=head1 ENVIRONMENT
+
+Install required library:
+
+ sudo apt install libreadline-dev
 
 =head1 SEE ALSO
 
@@ -286,13 +384,7 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >>
 
 =head1 BUGS
 
-- no new lexicals
-
-Currently its not possible to create any new lexicals variables
-while I have not yet found a way to run "eval" with a higher scope of lexicals.
-(perhaps there is another way?perhaps there is another way?)
-
-You can make global variables though (with "our" keyword).
+- L<no new lexicals|/=head2 New Variables>
 
 Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
