@@ -188,8 +188,7 @@ sub _complete {
 
     # TODO:
     # Hash or hashref - Show possible keys and string variables.
-    # p $repl->{TAB}
-  # return $self->_complete_hash( @_ ) if $line =~ / ^ \s* p $ /x;
+    return $self->_complete_hash( "$1", @_ ) if substr( $line, 0, $end ) =~ / (\S+)->\{ [^}]* $ /x;
 
     return $self->_complete_vars( @_ );
 }
@@ -234,7 +233,7 @@ sub _complete_arrow {
         if ( not $methods ) {
             $methods = [ get_full_functions( ref $obj_or_coderef ) ];
             $self->{methods}{$obj_or_coderef} = $methods;
-            push @$methods, "(";    # Access as method or hash refs.
+          # push @$methods, "(";    # Access as method or hash refs.
             push @$methods, "{" if reftype( $obj_or_coderef ) eq "HASH";
             push @$methods, @{ $self->{vars_string} };
 
@@ -253,13 +252,32 @@ sub _complete_arrow {
     # Coderef.
     if ( ref( $obj_or_coderef ) eq "CODE" ) {
         say "IS_CODE: $obj_or_coderef" if $self->debug;
-        $self->attr->{completion_word}             = ["("];
-        $self->attr->{completion_append_character} = '';
-        return "$text(";
+        return $self->_match(
+            words   => ["("],
+            prepend => "$text",
+            nospace => 1,
+        );
     }
 
     say "NOT OBJECT or CODEREF: $obj_or_coderef" if $self->debug;
     return;
+}
+
+sub _complete_hash {
+    my $self = shift;
+    my ( $var, $text, $line, $start, $end ) = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    my @hash_keys = @{$self->{vars_string}};
+    my $ref = $self->{peek_all}{$var};
+    $ref = $$ref if reftype($ref) eq "REF";
+    push @hash_keys, keys %$ref if reftype($ref) eq "HASH";
+
+    $self->_match(
+        words   => \@hash_keys,
+        partial => $text,
+        nospace => 1,
+    );
 }
 
 sub _complete_vars {
@@ -304,7 +322,7 @@ sub _match {
 sub _dump_args {
     my $self = shift;
     my $sub  = ( caller( 1 ) )[3];
-    $sub =~ s/ ^ .* :: //x;            # Short sub name.
+    $sub =~ s/ ^ .* :: //x;    # Short sub name.
     my $args = join ",", map { defined( $_ ) ? "'$_'" : "undef" } @_;
     printf "%-20s %s\n", $sub, "($args)";
 }
@@ -372,7 +390,8 @@ sub _step {
     # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
     $input =~ s/ ^
         (
-            hist
+              h
+            | hist
         ) \b
         (.*)
     $ /\$repl->$1($2)/x;
@@ -391,7 +410,12 @@ Show help section.
 =cut
 
 sub h {
+    my ($self) = @_;
+    my $version = $self->VERSION;
+    my $class   = ref $self;
     say colored( <<"HELP", "YELLOW" );
+    
+ $class $version
 
  h           - Show this help section.
  q           - Quit debugger.
