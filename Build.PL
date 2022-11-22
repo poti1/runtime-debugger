@@ -23,6 +23,7 @@ my $builder = Module::Build->new(
         'Term::ReadLine::Gnu' => '1.44',
         'PadWalker'           => '2.5',
         'Class::Tiny'         => '1.008',
+        'Module::Functions'   => '2.1.3',
     },
     add_to_cleanup => ['Runtime-Debugger-*'],
     meta_merge     => {
