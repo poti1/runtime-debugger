@@ -21,6 +21,7 @@
       },
       "runtime" : {
          "requires" : {
+            "Class::Tiny" : "1.008",
             "PadWalker" : "2.5",
             "Term::ReadLine::Gnu" : "1.44",
             "perl" : "5.012"

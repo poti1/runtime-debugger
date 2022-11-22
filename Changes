@@ -1,5 +1,8 @@
 Revision history for Runtime-Debugger
 
+0.05
+        2022-11-22 - Improved autocompletion (much smarter).
+        2022-11-22 - Performance Improvement by caching lexicals at the start.
 0.04
         2022-11-21 - Added commands: help, history.
 0.03

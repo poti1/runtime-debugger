@@ -22,11 +22,14 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Term::ReadLine;
-use Term::ANSIColor qw( colored );
-use PadWalker       qw( peek_my  peek_our );
-use feature         qw( say );
-use parent          qw( Exporter );
-use subs            qw( p uniq );
+use Term::ANSIColor   qw( colored );
+use PadWalker         qw( peek_my  peek_our );
+use Scalar::Util      qw( blessed reftype );
+use Module::Functions qw( get_full_functions );
+use Class::Tiny       qw( term attr debug );
+use feature           qw( say state );
+use parent            qw( Exporter );
+use subs              qw( p uniq );
 
 our @EXPORT = qw(
   run
@@ -35,19 +38,11 @@ our @EXPORT = qw(
   hist
   uniq
 );
+our $VERSION = '0.05';
 
 =head1 NAME
 
 Runtime::Debugger - Easy to use REPL with existing lexicals support.
-
-=head1 VERSION
-
-Version 0.04
-
-=cut
-
-our $VERSION = '0.04';
-
 
 =head1 SYNOPSIS
 
@@ -58,7 +53,7 @@ in others modules).
 
 Try with this command line:
 
-    perl -MRuntime::Debugger -E 'my $str1 = "str-1"; our $str2 = "str-2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2);  eval run; say $@'
+ perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
 
 =head1 DESCRIPTION
 
@@ -107,9 +102,7 @@ You can make global variables though if:
 
 =cut
 
-#
-# API
-#
+# Initialize
 
 =head2 run
 
@@ -131,6 +124,263 @@ sub run {
 CODE
 }
 
+sub _init {
+    my ( $class ) = @_;
+
+    # Setup the terminal.
+    my $term    = Term::ReadLine->new( $class );
+    my $attribs = $term->Attribs;
+    $term->ornaments( 0 );    # Remove underline from terminal.
+
+    # Removed these as break chars so that we can complete:
+    # "$scalar", "@array", "%hash" ("%" was already not in the list).
+    #
+    # Removed ">" to be able to complete for method calls: "$obj->$method"
+    #
+    # # Removed "(" to be able to complete for coderefs calls: "$coderef->("
+    #
+    # # Removed "{" to be able to complete for hash keys: "$hash->{"
+    #
+    $attribs->{completer_word_break_characters} =~ s/ [\$@>] //xg;
+
+    # Build the debugger object.
+    my $self = bless {
+        history_file => "$ENV{HOME}/.runtime_debugger.info",
+        term         => $term,
+        attr         => $attribs,
+        debug        => $ENV{RUNTIME_DEBUGGER_DEBUG} // 0,
+    }, $class;
+
+   # https://metacpan.org/pod/Term::ReadLine::Gnu#Custom-Completion
+   # Definition for list_completion_function is here: Term/ReadLine/Gnu/XS.pm
+   # $attribs->{completion_entry_function} = sub { $self->_complete_OLD( @_ ) };
+    $attribs->{attempted_completion_function} = sub { $self->_complete( @_ ) };
+
+    $self->_restore_history;
+
+    # Setup some signal hnndling.
+    for my $signal ( qw( INT TERM HUP ) ) {
+        $SIG{$signal} = sub { $self->_exit( $signal ) };
+    }
+
+    $self;
+}
+
+# Completion
+
+sub _complete {
+    my $self = shift;
+    my ( $text, $line, $start, $end ) = @_;
+    say ""                  if $self->debug;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    # Note: return list is what will be shown as possiblities.
+
+    # Empty - show commands and variables.
+    return $self->_complete_empty( @_ ) if $line =~ / ^ \s* $ /x;
+
+    # Print command - space afterwards.
+    return $self->_complete_print( @_ ) if $line =~ / ^ \s* p $ /x;
+
+    # Method call or coderef - append "(".
+    return $self->_complete_arrow( "$1", "$2", @_ )
+      if $text =~ / ^ ( \$ \S+ ) -> (\S*) $ /x;
+
+    # TODO: Show possible keys for:
+    # p $repl->{TAB}
+
+    return $self->_complete_vars( @_ );
+}
+
+sub _complete_empty {
+    my $self = shift;
+    my ( $text, $line, $start, $end ) = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    $self->_match(
+        words   => $self->{commands_and_variables},
+        partial => $text,
+    );
+}
+
+sub _complete_print {
+    my $self = shift;
+    my ( $text, $line, $start, $end ) = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    $self->_match( words => ["p"] );
+}
+
+sub _complete_arrow {
+    my $self = shift;
+    my ( $var, $partial_method, $text, $line, $start, $end ) = @_;
+    my $ref = $self->{peek_all}->{$var} // "";
+    $partial_method //= '';
+    $self->_dump_args( @_ ) if $self->debug;
+    say "ref: $ref"         if $self->debug;
+
+    return if ref( $ref ) ne "REF";    # Coderef or object.
+
+    # Object call or coderef.
+    my $obj_or_coderef = $$ref;
+
+    # Object.
+    if ( blessed( $obj_or_coderef ) ) {
+        say "IS_OBJECT: $obj_or_coderef" if $self->debug;
+
+        my $methods = $self->{methods}{$obj_or_coderef};
+        if ( not $methods ) {
+            $methods = [ get_full_functions( ref $obj_or_coderef ) ];
+            $self->{methods}{$obj_or_coderef} = $methods;
+            push @$methods, "(";    # Access as method or hash refs.
+            push @$methods, "{" if reftype( $obj_or_coderef ) eq "HASH";
+            push @$methods, @{ $self->{vars_string} };
+
+            # push @$methods, $self->{vars_all}; # TODO: Add scalars.
+        }
+        say "methods: @$methods" if $self->debug;
+
+        return $self->_match(
+            words   => $methods,
+            partial => $partial_method,
+            prepend => "$var->",
+            nospace => 1,
+        );
+    }
+
+    # Coderef.
+    if ( ref( $obj_or_coderef ) eq "CODE" ) {
+        say "IS_CODE: $obj_or_coderef" if $self->debug;
+        $self->attr->{completion_word}             = ["("];
+        $self->attr->{completion_append_character} = '';
+        return "$text(";
+    }
+
+    say "NOT OBJECT or CODEREF: $obj_or_coderef" if $self->debug;
+    return;
+}
+
+sub _complete_vars {
+    my $self = shift;
+    my ( $text, $line, $start, $end ) = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    $self->_match(
+        words   => $self->{vars_all},
+        partial => $text,
+        nospace => 1,
+    );
+}
+
+=head2 _match
+
+Returns the possible matches:
+
+Input:
+ words   => ["cat", "cake", "bat", "bake"],
+ partial => "c",            # Default: ""  - What you typed so far.
+ prepend => "Class>",       # Default: ""  - prepend to each possiblity.
+ nospace => 0,              # Default: "0" - will not append a space after a completion.
+
+=cut
+
+sub _match {
+    my $self  = shift;
+    my %parms = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    $parms{partial} //= "";
+    $parms{prepend} //= "";
+    $self->attr->{completion_word}             = $parms{words};
+    $self->attr->{completion_append_character} = '' if $parms{nospace};
+
+    map { "$parms{prepend}$_" }
+      $self->term->completion_matches( $parms{partial},
+        $self->attr->{list_completion_function} );
+}
+
+sub _dump_args {
+    my $self = shift;
+    my $sub  = ( caller( 1 ) )[3] =~ s/ ^ .* :: //xr;    # Short sub name.
+    my $args = join ",", map { defined( $_ ) ? "'$_'" : "undef" } @_;
+    printf "%-20s %s\n", $sub, "($args)";
+}
+
+sub _setup_vars {
+    my ( $self ) = @_;
+
+    # Get and cache the current variables in the invoking scope.
+    #
+    # Note: this block was originally in _step since the intent
+    # was to be able to see newly added lexicals or globals.
+    # (which does not seem to be possible since the lexical scope
+    # of a new variable would be found to the eval block).
+    #
+    # Although globals can be created, they would appear in the
+    # invoking scope (like "main").
+    #
+    # Moved here to be able to capture the debugger object "$repl".
+    #
+    # CAUTION: avoid having the same name for a lexical and global
+    # variable since the last variable declared would "win".
+    my $levels       = 2;    # How many levels until at "$repl=" or main.
+    my $peek_my      = peek_my( $levels );
+    my $peek_our     = peek_our( $levels );
+    my %peek_all     = ( %$peek_our, %$peek_my );
+    my @vars_lexical = sort keys %$peek_my;
+    my @vars_global  = sort keys %$peek_our;
+    my @vars_all     = sort uniq @vars_lexical, @vars_global;
+
+    # Cache variables.
+    $self->{peek_my}      = $peek_my;
+    $self->{peek_our}     = $peek_our;
+    $self->{peek_all}     = \%peek_all;
+    $self->{vars_lexical} = \@vars_lexical;
+    $self->{vars_global}  = \@vars_global;
+    $self->{vars_all}     = \@vars_all;
+
+    my @commands = qw( h hist p uniq q );
+    $self->{commands}               = \@commands;
+    $self->{commands_and_variables} = [ sort( @commands, @vars_all ) ];
+    $self->{vars_string}            = [
+        grep { ref( $peek_all{$_} ) eq "SCALAR" }
+        grep { /^\$/ } @vars_all
+    ];
+
+    $self;
+}
+
+sub _step {
+    my ( $self ) = @_;
+
+    $self->_setup_vars if not $self->{vars_all};
+
+    my $input = $self->term->readline( "perl>" ) // '';
+
+    # Change '#1' to '--maxdepth=1'
+    if ( $input =~ / ^ p\b /x ) {
+        $input =~ s/
+            \s*
+            \#(\d)     #2 to --maxdepth=2
+            \s*
+        $ /, '--maxdepth=$1'/x;
+    }
+
+    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
+    $input =~ s/ ^
+        (
+            hist
+        ) \b
+        (.*)
+    $ /\$repl->$1($2)/x;
+
+    $self->_exit( $input ) if $input eq 'q';
+
+    $input;
+}
+
+# Help
+
 =head2 h
 
 Show help section.
@@ -148,6 +398,85 @@ sub h {
 
 HELP
 }
+
+# History
+
+=head2 hist
+
+Show history of commands.
+
+By default will show 20 commands:
+
+ hist
+
+Same thing:
+
+ hist 20
+
+Can show more:
+
+ hist 50
+
+=cut
+
+sub hist {
+    my ( $self, $levels ) = @_;
+    $levels //= 20;
+    my @history = $self->_history;
+
+    if ( @history and $levels < @history ) {
+        @history = splice @history, -$levels;
+    }
+
+    for my $index ( 0 .. $#history ) {
+        printf "%s %s\n",
+          colored( $index + 1,       "YELLOW" ),
+          colored( $history[$index], "GREEN" );
+    }
+}
+
+sub _history {
+    my $self = shift;
+
+    # Setter.
+    return $self->term->SetHistory( @_ ) if @_;
+
+    # Getter.
+    # Last command should be the first you see upon hiting arrow up
+    # and also without any duplicates.
+    my @history = reverse uniq reverse $self->term->GetHistory;
+    pop @history if $history[-1] eq "q";    # Don't record quit command.
+    $self->term->SetHistory( @history );
+
+    @history;
+}
+
+sub _restore_history {
+    my ( $self ) = @_;
+
+    # Restore last history.
+    if ( -e $self->{history_file} ) {
+        my @history;
+        open my $fh, '<', $self->{history_file} or die $!;
+        while ( <$fh> ) {
+            chomp;
+            push @history, $_;
+        }
+        close $fh;
+        $self->_history( @history );
+    }
+}
+
+sub _save_history {
+    my ( $self ) = @_;
+
+    # Save current history.
+    open my $fh, '>', $self->{history_file} or die $!;
+    say $fh $_ for $self->_history;
+    close $fh;
+}
+
+# Print
 
 =head2 p
 
@@ -192,39 +521,7 @@ sub p {
     print $d->Dump;
 }
 
-=head2 hist
-
-Show history of commands.
-
-By default will show 20 commands:
-
- hist
-
-Same thing:
-
- hist 20
-
-Can show more:
-
- hist 50
-
-=cut
-
-sub hist {
-    my ( $self, $levels ) = @_;
-    $levels //= 20;
-    my @history = $self->_history;
-
-    if ( $levels < @history ) {
-        @history = splice @history, -$levels;
-    }
-
-    for my $index ( 0 .. $#history ) {
-        printf "%s %s\n",
-          colored( $index + 1,       "YELLOW" ),
-          colored( $history[$index], "GREEN" );
-    }
-}
+# Unique
 
 =head2 uniq
 
@@ -237,117 +534,29 @@ sub uniq (@) {
     grep { not $h{$_}++ } @_;
 }
 
-#
-# Internal
-#
-
-sub _init {
-    my ( $class ) = @_;
-    my $self = bless {
-        history_file => "$ENV{HOME}/.runtime_debugger.info",
-        term         => Term::ReadLine->new( $class ),
-    }, $class;
-    my $attribs = $self->{attribs} = $self->{term}->Attribs;
-
-    $self->{term}->ornaments( 0 );    # Remove underline from terminal.
-
-    # Restore last history.
-    if ( -e $self->{history_file} ) {
-        my @history;
-        open my $fh, '<', $self->{history_file} or die $!;
-        while ( <$fh> ) {
-            chomp;
-            push @history, $_;
-        }
-        close $fh;
-        $self->_history( @history );
-    }
-
-    # https://metacpan.org/pod/Term::ReadLine::Gnu#Custom-Completion
-    # Definition for list_completion_function is here: Term/ReadLine/Gnu/XS.pm
-    $attribs->{completion_entry_function} =
-      $attribs->{list_completion_function};
-
-    # Remove these as break chars so that we can complete:
-    # "$scalar", "@array", "%hash"
-    # ("%" was already not in the list).
-    $attribs->{completer_word_break_characters} =~ s/ [\$@] //xg;
-
-    # Setup some signal hnndling.
-    for my $signal ( qw( INT TERM HUP ) ) {
-        $SIG{$signal} = sub { $self->_exit( $signal ) };
-    }
-
-    $self;
-}
+# Cleanup
 
 sub _exit {
     my ( $self, $how ) = @_;
 
-    # Save current history.
-    open my $fh, '>', $self->{history_file} or die $!;
-    say $fh $_ for $self->_history;
-    close $fh;
+    $self->_save_history;
 
+    die "Exit via '$how'\n";
+}
+
+sub Term::ReadLine::DESTROY {
+    my ( $self ) = @_;
+
+    # Make sure to fix the terminal incase of errors.
     # This will reset the terminal similar to
     # what these should do:
     # - "reset"
     # - "tset"
     # - "stty echo"
-    $self->{term}->deprep_terminal;
-
-    die "Exit via '$how'\n";
-}
-
-sub _history {
-    my $self = shift;
-
-    # Setter.
-    return $self->{term}->SetHistory( @_ ) if @_;
-
-    # Getter.
-    # Last command should be the first you see upon hiting arrow up
-    # and also without any duplicates.
-    reverse uniq reverse $self->{term}->GetHistory;
-}
-
-sub _step {
-    my ( $self ) = @_;
-
-    # Current lexical variables in scope.
-    # Note: this block could be moved to _init, but the intent
-    # was to be able to see newly added lexcicals
-    # (which does not seem to be possible).
     #
-    # But global variable can be created and therefore it is
-    # best to keep this block here to run per command.
-    my $lexicals = peek_my( 1 );
-    my $globals  = peek_our( 1 );
-    my @words    = sort keys %$lexicals, keys %$globals;
-    $self->{attribs}->{completion_word} = \@words;
-
-    my $input = $self->{term}->readline( "perl>" ) // '';
-
-    # Change '#1' to '--maxdepth=1'
-    if ( $input =~ / ^ p\b /x ) {
-        $input =~ s/
-            \s*
-            \#(\d)     #2 to --maxdepth=2
-            \s*
-        $ /, '--maxdepth=$1'/x;
-    }
-
-    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
-    $input =~ s/ ^
-        (
-            hist
-        ) \b
-        (.*)
-    $ /\$repl->$1($2)/x;
-
-    $self->_exit( $input ) if $input eq 'q';
-
-    $input;
+    # Using this DESTROY function since "$self->{term}"
+    # is already destroyed by the time we call "_exit".
+    $self->deprep_terminal;
 }
 
 sub _show_error {
@@ -359,11 +568,17 @@ sub _show_error {
     say colored( $error, "RED" );
 }
 
+# Pod
+
 =head1 ENVIRONMENT
 
 Install required library:
 
  sudo apt install libreadline-dev
+
+Enable this environmental variable to show debugging information:
+
+ RUNTIME_DEBUGGER_DEBUG=1
 
 =head1 SEE ALSO
 
@@ -380,7 +595,7 @@ This module also looked nice, but same issue.
 
 =head1 AUTHOR
 
-Tim Potapov, C<< <tim.potapov[AT]gmail.com> >>
+Tim Potapov, C<< <tim.potapov[AT]gmail.com> >> E<0x1f42a>E<0x1f977>
 
 =head1 BUGS
 
@@ -413,4 +628,4 @@ This is free software, licensed under:
 
 =cut
 
-1;    # End of Runtime::Debugger
+"\x{1f42a}\x{1f977}"
