@@ -186,7 +186,8 @@ sub _complete {
     return $self->_complete_arrow( "$1", "$2", @_ )
       if $text =~ / ^ ( \$ \S+ ) -> (\S*) $ /x;
 
-    # TODO: Show possible keys for:
+    # TODO:
+    # Hash or hashref - Show possible keys and string variables.
     # p $repl->{TAB}
 
     return $self->_complete_vars( @_ );
@@ -569,6 +570,18 @@ sub _show_error {
 }
 
 # Pod
+
+=head2 attr
+
+Internal use.
+
+=head2 debug
+
+Internal use.
+
+=head2 term
+
+Internal use.
 
 =head1 ENVIRONMENT
 

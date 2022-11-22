@@ -92,3 +92,6 @@
 
 # Avoid archives of this distribution
 \bRuntime-Debugger-[\d\.\_]+
+
+# Avoid git flow
+/.github/workflows/
