@@ -189,6 +189,7 @@ sub _complete {
     # TODO:
     # Hash or hashref - Show possible keys and string variables.
     # p $repl->{TAB}
+  # return $self->_complete_hash( @_ ) if $line =~ / ^ \s* p $ /x;
 
     return $self->_complete_vars( @_ );
 }
@@ -302,7 +303,8 @@ sub _match {
 
 sub _dump_args {
     my $self = shift;
-    my $sub  = ( caller( 1 ) )[3] =~ s/ ^ .* :: //xr;    # Short sub name.
+    my $sub  = ( caller( 1 ) )[3];
+    $sub =~ s/ ^ .* :: //x;            # Short sub name.
     my $args = join ",", map { defined( $_ ) ? "'$_'" : "undef" } @_;
     printf "%-20s %s\n", $sub, "($args)";
 }
