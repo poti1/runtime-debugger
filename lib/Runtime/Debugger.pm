@@ -137,10 +137,7 @@ sub _init {
     #
     # Removed ">" to be able to complete for method calls: "$obj->$method"
     #
-    # # Removed "(" to be able to complete for coderefs calls: "$coderef->("
-    #
-    # # Removed "{" to be able to complete for hash keys: "$hash->{"
-    #
+    # TODO: After testing is setup, try removing ">$@".
     $attribs->{completer_word_break_characters} =~ s/ [\$@>] //xg;
 
     # Build the debugger object.
@@ -188,7 +185,8 @@ sub _complete {
 
     # TODO:
     # Hash or hashref - Show possible keys and string variables.
-    return $self->_complete_hash( "$1", @_ ) if substr( $line, 0, $end ) =~ / (\S+)->\{ [^}]* $ /x;
+    return $self->_complete_hash( "$1", @_ )
+      if substr( $line, 0, $end ) =~ / (\S+)->\{ [^}]* $ /x;
 
     return $self->_complete_vars( @_ );
 }
@@ -233,7 +231,8 @@ sub _complete_arrow {
         if ( not $methods ) {
             $methods = [ get_full_functions( ref $obj_or_coderef ) ];
             $self->{methods}{$obj_or_coderef} = $methods;
-          # push @$methods, "(";    # Access as method or hash refs.
+
+            # push @$methods, "(";    # Access as method or hash refs.
             push @$methods, "{" if reftype( $obj_or_coderef ) eq "HASH";
             push @$methods, @{ $self->{vars_string} };
 
@@ -268,10 +267,10 @@ sub _complete_hash {
     my ( $var, $text, $line, $start, $end ) = @_;
     $self->_dump_args( @_ ) if $self->debug;
 
-    my @hash_keys = @{$self->{vars_string}};
-    my $ref = $self->{peek_all}{$var};
-    $ref = $$ref if reftype($ref) eq "REF";
-    push @hash_keys, keys %$ref if reftype($ref) eq "HASH";
+    my @hash_keys = @{ $self->{vars_string} };
+    my $ref       = $self->{peek_all}{$var};
+    $ref = $$ref if reftype( $ref ) eq "REF";
+    push @hash_keys, keys %$ref if reftype( $ref ) eq "HASH";
 
     $self->_match(
         words   => \@hash_keys,
@@ -410,11 +409,14 @@ Show help section.
 =cut
 
 sub h {
-    my ($self) = @_;
-    my $version = $self->VERSION;
-    my $class   = ref $self;
+    my ( $self ) = @_;
+    my $version  = $self->VERSION;
+    my $class    = ref $self;
+
+    # TODO: Make colorful.
+
     say colored( <<"HELP", "YELLOW" );
-    
+
  $class $version
 
  h           - Show this help section.
@@ -472,7 +474,9 @@ sub _history {
     # Last command should be the first you see upon hiting arrow up
     # and also without any duplicates.
     my @history = reverse uniq reverse $self->term->GetHistory;
-    pop @history if $history[-1] eq "q";    # Don't record quit command.
+    pop @history
+      if @history and $history[-1] eq "q";    # Don't record quit command.
+
     $self->term->SetHistory( @history );
 
     @history;
@@ -480,18 +484,20 @@ sub _history {
 
 sub _restore_history {
     my ( $self ) = @_;
+    my @history;
 
     # Restore last history.
     if ( -e $self->{history_file} ) {
-        my @history;
         open my $fh, '<', $self->{history_file} or die $!;
         while ( <$fh> ) {
             chomp;
             push @history, $_;
         }
         close $fh;
-        $self->_history( @history );
     }
+
+    @history = ( "q" ) if not @history;    # avoid blank history.
+    $self->_history( @history );
 }
 
 sub _save_history {
