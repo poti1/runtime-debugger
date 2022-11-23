@@ -228,6 +228,8 @@ for my $case ( @cases ) {
     is_deeply \%results, $expected_results, $case->{name};
 }
 
-$repl->_exit( "test" );
+# Explicitly stop the debugger.
+# Will write history to a file.
+# eval { $repl->_exit( "test" ) };
 
 done_testing();
