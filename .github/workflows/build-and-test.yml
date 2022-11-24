@@ -97,6 +97,7 @@ jobs:
           - "5.32"
           - "5.34"
           - "5.36"
+          - "latest"
     runs-on: ${{ matrix.os }}
     name:  on ${{ matrix.os }} perl ${{ matrix.perl-version }}
     steps:
@@ -115,6 +116,10 @@ jobs:
 
       - name: Show perl version
         run: perl -V
+
+      - name: Detect and fix faulty module: ExtUtils::Liblist::Kid
+        run: |
+          perl -lne 'print qq(Found faulty module line: "$ARGV:$.:$_") if s<^\s*unshift \@libpath, \K(?=map \Q{ s{/include[^/]*}{/lib};\E \$_ } \@incpath)><map { -e } >' $(perldoc -lm ExtUtils::Liblist::Kid)
 
       - name: Install Module::Build dependencies
         run: |
