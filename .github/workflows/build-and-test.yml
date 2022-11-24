@@ -22,11 +22,11 @@ jobs:
       - name: Show Perl Version
         run: perl -v
 
-      - name: Install Dependencies
-        run: |
-          perl Build.PL
-          perl Build
-          perl Build installdeps
+     #- name: Install Dependencies
+     #  run: |
+     #    perl Build.PL
+     #    perl Build
+     #    perl Build installdeps
 
       - name: Find auto-build-and-test-dist
         run: |
