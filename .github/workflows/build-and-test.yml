@@ -26,9 +26,10 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cpanm Module::Build~0.4004
+          cpanm Test::CheckManifest
           perl Build.PL
           perl Build installdeps
-          cpanm Test::CheckManifest
 
       - name: Prepare build_dir
         run: |
