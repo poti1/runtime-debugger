@@ -27,12 +27,10 @@ jobs:
       - name: Install dependencies
         run: |
           apt install -y libreadline-dev
-          echo "TERM=$TERM"
           cpanm Module::Build~0.4004
           cpanm Test::CheckManifest
           perl Build.PL
           perl Build installdeps
-          echo "TERM=$TERM"
 
       - name: Prepare build_dir
         run: |

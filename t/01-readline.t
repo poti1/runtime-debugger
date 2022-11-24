@@ -58,7 +58,7 @@ my $repl;
     my $history_file = "$ENV{HOME}/.runtime_debugger_testmode.info";
     unlink $history_file if -e $history_file;
     $repl->{history_file} = $history_file;
-    $repl->_restore_history();
+    $repl->_restore_history;
 
     # Avoid using getc for testing (to not have prompts).
     my $INSTR;
@@ -355,9 +355,7 @@ for my $case ( @cases ) {
 
     # Skip
     if ( $case->{skip} ) {
-      SKIP: {
-            skip $case->{name};
-        }
+        pass $case->{name};
         next unless $case->{debug};
     }
 
