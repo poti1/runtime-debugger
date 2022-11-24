@@ -17,61 +17,60 @@ jobs:
     container:
       image: perldocker/perl-tester:5.34
     steps:
-      - uses: actions/checkout@v3
 
-      - name: Show Perl Version
+      - name: Checkout docker/package
+        uses: actions/checkout@v3
+
+      - name: Show perl version
         run: perl -v
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           perl Build.PL
           perl Build
           perl Build installdeps
 
-      - name: Find auto-build-and-test-dist
-        run: |
-          which auto-build-and-test-dist
-          cat `which auto-build-and-test-dist`
-
-      - name: Find cpan-install-build-deps
-        run: |
-          which cpan-install-build-deps
-          cat `which cpan-install-build-deps`
-
-      - name: Run Tests
+      - name: Run tests
         env:
           AUTHOR_TESTING: 1
           AUTOMATED_TESTING: 1
           EXTENDED_TESTING: 1
           RELEASE_TESTING: 1
-      # run: auto-build-and-test-dist # (Not working for Term::ReadLine::Gnu)
         run: perl Build test
-      - uses: actions/upload-artifact@v3
+
+      - name: Upload artifact for next steps
+        uses: actions/upload-artifact@v3
         with:
           name: build_dir
           path: build_dir
-        if: ${{ github.actor != 'nektos/act' }}
+
   coverage-job:
     needs: build-job
     runs-on: ubuntu-20.04
     container:
       image: perldocker/perl-tester:5.34
     steps:
-      - uses: actions/checkout@v3 # codecov wants to be inside a Git repository
-      - uses: actions/download-artifact@v3
+
+      - name: Checkout docker/package
+        uses: actions/checkout@v3 # codecov wants to be inside a Git repository
+
+      - name: Download artifact from build step
+        uses: actions/download-artifact@v3
         with:
           name: build_dir
           path: .
+
       - name: Install deps and test
         run: cpan-install-dist-deps && test-dist
         env:
           CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
+
   test-job:
     needs: build-job
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest, macos-latest ]
+        os: [ ubuntu-latest, macos-latest ]
         distribution: [ default ]
         perl-version:
           - "5.12"
@@ -90,21 +89,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     name:  on ${{ matrix.os }} perl ${{ matrix.perl-version }}
     steps:
-      - name: set up perl
+
+      - name: Set up perl
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl-version }}
           distribution: ${{ matrix.distribution }}
-      - uses: actions/download-artifact@v3
+
+      - name: Download artifact from build step
+        uses: actions/download-artifact@v3
         with:
           name: build_dir
           path: .
-      - name: install deps using cpanm
-        uses: perl-actions/install-with-cpanm@v1
-        with:
-          cpanfile: "cpanfile"
-          args: "--with-suggests --with-recommends --with-test"
-      - run: prove -lr t
+
+      - name: Install dependencies
+        run: |
+          perl Build.PL
+          perl Build
+          perl Build installdeps
+
+      - name: Run tests
+        run: prove -lr t
         env:
           AUTHOR_TESTING: 0
           RELEASE_TESTING: 0
