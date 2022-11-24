@@ -30,7 +30,6 @@ jobs:
 
       - name: Find auto-build-and-test-dist
         run: |
-          declare -f auto-build-and-test-dist
           which auto-build-and-test-dist
 
       - name: Run Tests
