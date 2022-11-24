@@ -121,7 +121,7 @@ jobs:
         run: |
           version=$(perl -MExtUtils::MakeMaker -e 'print ExtUtils::MakeMaker->VERSION')
           echo "ExtUtils::MakeMaker->VERSION=$version"
-          [[ "$version" < "7.6502" ]] && cpanm git@github.com:Perl-Toolchain-Gang/ExtUtils-MakeMaker.git
+          [[ "$version" < "7.6502" ]] && cpanm https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/archive/refs/tags/v7.65_02.tar.gz
 
       - name: Install Module::Build dependencies
         run: |
