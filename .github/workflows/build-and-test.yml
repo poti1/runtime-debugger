@@ -117,7 +117,7 @@ jobs:
         run: |
           echo "TERM=$TERM"
           cpanm Module::Build~0.4004
-          cpanm Term::ReadLine::Gnu
+          cpanm Term::ReadLine::Gnu -v
           perl Build.PL
           perl Build installdeps
 
