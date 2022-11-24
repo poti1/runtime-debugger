@@ -346,6 +346,23 @@ my @cases = (
             ],
         },
     },
+    {
+        name             => 'Help - short "h"',
+        input            => 'h',
+        expected_results => {
+            line   => 'h',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Help - short "h<TAB>"',
+        input            => 'h' . $TAB,
+        expected_results => {
+            comp   => [ 'help', 'hist' ],
+            line   => 'h',
+            stdout => [],
+        },
+    },
 
 );
 
@@ -416,4 +433,4 @@ for my $case ( @cases ) {
 # Will write history to a file.
 # eval { $repl->_exit( "test" ) };
 
-done_testing( 21 );
+done_testing( 23 );

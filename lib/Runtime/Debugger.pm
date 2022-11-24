@@ -31,14 +31,8 @@ use feature           qw( say state );
 use parent            qw( Exporter );
 use subs              qw( p uniq );
 
-our @EXPORT = qw(
-  run
-  h
-  p
-  hist
-  uniq
-);
-our $VERSION = '0.05';
+our $VERSION = '0.06';
+our @EXPORT  = qw( run h p );
 
 =head1 NAME
 
@@ -342,6 +336,15 @@ sub _dump_args {
     printf "%-20s %s\n", $sub, "($args)";
 }
 
+sub _define_commands {
+    (
+        "help",    # Changed in _step to $repl->help().
+        "hist",    # Changed in _step to $repl->hist().
+        "p",       # Exporting it.
+        "q",       # Exporting it.
+    );
+}
+
 sub _setup_vars {
     my ( $self ) = @_;
 
@@ -375,8 +378,7 @@ sub _setup_vars {
     $self->{vars_global}  = \@vars_global;
     $self->{vars_all}     = \@vars_all;
 
-    # TODO: Move commands to function.
-    my @commands = qw( help hist p q uniq );
+    my @commands = $self->_define_commands;
 
     $self->{commands}               = \@commands;
     $self->{commands_and_variables} = [ sort( @commands, @vars_all ) ];

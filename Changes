@@ -1,5 +1,8 @@
 Revision history for Runtime-Debugger
 
+0.06
+        2022-11-24 - Moveds commands to a function.
+        2022-11-24 - Fixed minor bugs (like h<ENTER>).
 0.05
         2022-11-22 - Improved autocompletion (much smarter).
         2022-11-22 - Performance Improvement by caching lexicals at the start.
