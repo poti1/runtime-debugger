@@ -138,7 +138,8 @@ sub _init {
     # Removed ">" to be able to complete for method calls: "$obj->$method"
     #
     # TODO: After testing is setup, try removing ">$@".
-    $attribs->{completer_word_break_characters} =~ s/ [\$@>] //xg;
+    $attribs->{completer_word_break_characters} =~ s/ [>] //xg;
+    $attribs->{special_prefixes} = '$@%&';
 
     # Build the debugger object.
     my $self = bless {
@@ -176,18 +177,21 @@ sub _complete {
     # Empty - show commands and variables.
     return $self->_complete_empty( @_ ) if $line =~ / ^ \s* $ /x;
 
+    # Help or History command - complete the word.
+    return $self->_complete_h( @_ ) if $line =~ / ^ \s* h \w* $ /x;
+
     # Print command - space afterwards.
-    return $self->_complete_print( @_ ) if $line =~ / ^ \s* p $ /x;
+    return $self->_complete_p( @_ ) if $line =~ / ^ \s* p $ /x;
 
     # Method call or coderef - append "(".
     return $self->_complete_arrow( "$1", "$2", @_ )
       if $text =~ / ^ ( \$ \S+ ) -> (\S*) $ /x;
 
-    # TODO:
     # Hash or hashref - Show possible keys and string variables.
     return $self->_complete_hash( "$1", @_ )
       if substr( $line, 0, $end ) =~ / (\S+)->\{ [^}]* $ /x;
 
+    # Otherwise assume its a variable.
     return $self->_complete_vars( @_ );
 }
 
@@ -202,7 +206,19 @@ sub _complete_empty {
     );
 }
 
-sub _complete_print {
+sub _complete_h {
+    my $self = shift;
+    my ( $text, $line, $start, $end ) = @_;
+    $self->_dump_args( @_ ) if $self->debug;
+
+    $self->_match(
+        partial => $text,
+        words   => [ "help", "hist" ],
+        nospace => 1,
+    );
+}
+
+sub _complete_p {
     my $self = shift;
     my ( $text, $line, $start, $end ) = @_;
     $self->_dump_args( @_ ) if $self->debug;
@@ -310,8 +326,8 @@ sub _match {
 
     $parms{partial} //= "";
     $parms{prepend} //= "";
-    $self->attr->{completion_word}             = $parms{words};
-    $self->attr->{completion_append_character} = '' if $parms{nospace};
+    $self->attr->{completion_word}            = $parms{words};
+    $self->attr->{completion_suppress_append} = 1 if $parms{nospace};
 
     map { "$parms{prepend}$_" }
       $self->term->completion_matches( $parms{partial},
@@ -359,13 +375,48 @@ sub _setup_vars {
     $self->{vars_global}  = \@vars_global;
     $self->{vars_all}     = \@vars_all;
 
-    my @commands = qw( h hist p uniq q );
+    # TODO: Move commands to function.
+    my @commands = qw( help hist p q uniq );
+
     $self->{commands}               = \@commands;
     $self->{commands_and_variables} = [ sort( @commands, @vars_all ) ];
-    $self->{vars_string}            = [
-        grep { ref( $peek_all{$_} ) eq "SCALAR" }
-        grep { /^\$/ } @vars_all
-    ];
+
+    # Separate variables by types.
+    for ( @vars_all ) {
+        if ( / ^ \$ /x ) {
+            push @{ $self->{vars_scalar} }, $_;
+
+            my $ref  = $peek_all{$_};
+            my $type = ref( $ref );
+            if ( $type eq "SCALAR" ) {
+                push @{ $self->{vars_string} }, $_;
+            }
+            elsif ( $type eq "REF" ) {
+                push @{ $self->{vars_ref} }, $_;
+                if ( blessed( $$ref ) ) {
+                    push @{ $self->{vars_obj} }, $_;
+                }
+                elsif ( ref( $$ref ) eq "CODE" ) {
+                    push @{ $self->{vars_code} }, $_;
+                }
+                else {
+                    push @{ $self->{vars_ref_else} }, $_;
+                }
+            }
+            else {
+                push @{ $self->{vars_scalar_else} }, $_;
+            }
+        }
+        elsif ( / ^ \@ /x ) {
+            push @{ $self->{vars_array} }, $_;
+        }
+        elsif ( / ^ % /x ) {
+            push @{ $self->{vars_hash} }, $_;
+        }
+        else {
+            push @{ $self->{vars_else} }, $_;
+        }
+    }
 
     $self;
 }
@@ -376,6 +427,7 @@ sub _step {
     $self->_setup_vars if not $self->{vars_all};
 
     my $input = $self->term->readline( "perl>" ) // '';
+    say "input_after_readline=[$input]" if $self->debug;
 
     # Change '#1' to '--maxdepth=1'
     if ( $input =~ / ^ p\b /x ) {
@@ -389,7 +441,7 @@ sub _step {
     # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
     $input =~ s/ ^
         (
-              h
+              help
             | hist
         ) \b
         (.*)
@@ -397,18 +449,19 @@ sub _step {
 
     $self->_exit( $input ) if $input eq 'q';
 
+    say "input_after_step=[$input]" if $self->debug;
     $input;
 }
 
 # Help
 
-=head2 h
+=head2 help
 
 Show help section.
 
 =cut
 
-sub h {
+sub help {
     my ( $self ) = @_;
     my $version  = $self->VERSION;
     my $class    = ref $self;
@@ -419,11 +472,11 @@ sub h {
 
  $class $version
 
- h           - Show this help section.
- q           - Quit debugger.
- TAB         - Show available lexical variables.
- p DATA [#N] - Prety print data (with optional depth),
+ <TAB>       - Show options.
+ help        - Show this help section.
  hist [N=20] - Show last N commands.
+ p DATA [#N] - Prety print data (with optional depth),
+ q           - Quit debugger.
 
 HELP
 }

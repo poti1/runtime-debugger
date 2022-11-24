@@ -3,15 +3,17 @@ use 5.006;
 use strict;
 use warnings;
 use Test::More;
-use Term::ANSIColor qw( uncolor );
+use Term::ANSIColor qw( colorstrip );
 use feature         qw(say);
 
 BEGIN {
     use_ok( 'Runtime::Debugger' ) || print "Bail out!\n";
 }
 
-my $EOL = "\cM";      # Append this character to the end to trigger end of line.
-my $TAB = "\cI\e*";   # Add this string to trigger completion support.
+my $EOL     = "\cM";    # Append to string to trigger end of line.
+my $TAB     = "\cI";    # Add to string to autocomplete.
+my $TAB_ALL = "\cI\e*"; # Add to string to autocomplete plus insert all matches.
+                        # This calls "_complete" multiple times.
 my $RUN;
 my $repl;
 
@@ -43,7 +45,9 @@ package MyTest {
 
     use Runtime::Debugger;
 
-    $repl = Runtime::Debugger->_init;
+    $Runtime::Debugger::VERSION  = "0.01";    # To make testing easier.
+    $ENV{RUNTIME_DEBUGGER_DEBUG} = 0;         # Just for debugging the test.
+    $repl                        = Runtime::Debugger->_init;
 
     # Use separate history file.
     my $history_file = "$ENV{HOME}/.runtime_debugger_testmode.info";
@@ -63,13 +67,26 @@ package MyTest {
     # Signals that a new character can be read from readline.
     # $repl->attr->{input_available_hook} = sub { 1 };
 
+    # Wrapper arround the main completion function to capture
+    # the results from "_complete".
     my $completion_return;
     $repl->attr->{attempted_completion_function} = sub {
         my ( $text, $line, $start, $end ) = @_;
-        my @ret = $repl->_complete( @_ );
-        $completion_return = \@ret;
+        my @ret   = $repl->_complete( @_ );
+        my @words = @ret;
+        shift @words;    # Skip exisiing text.
+        $completion_return = \@words;
         @ret;
     };
+
+    # my $completion_return_hook;
+    # $repl->attr->{completion_display_matches_hook} = sub {
+    #     my ( $matches, $num_matches, $max_length ) = @_;
+    #     say "matches_hook:";
+    #     p \@_, "--maxdepth=0";
+    #     $repl->term->display_match_list( $matches );
+    #     $repl->term->forced_update_display;
+    # };
 
     open my $NULL, ">", "/dev/null" or die $!;
 
@@ -99,13 +116,16 @@ package MyTest {
         }
 
         return {
-            stdin      => $stdin,
-            completion => $completion_return,
-            step       => $step_return,
-            eval       => $eval_return,
-            stdout     => $stdout,
+            stdin  => $stdin,
+            comp   => $completion_return,         # All recursive completions.
+            line   => $step_return,
+            eval   => $eval_return,
+            stdout => [ split /\n/, $stdout ],    # Much easier to debug later.
         };
     };
+
+    # Run once to setup variables for testins (like "vars_all").
+    $RUN->();
 }
 
 =head1 Sample test case
@@ -114,13 +134,16 @@ package MyTest {
     {
         name             => 'STRING',
         input            => 'STRING',
+        nocolor          => ARRAYREF, # Keys of values from results to strip colors.
         expected_results => {
-            stdin        => 'STRING', # Input.
-            completion   => ARRAYREF, # Result of tab completion (empy if no TAB).
-            step         => 'STRING', # After "_step".
-            eval         => 'STRING', # After "eval _step"
-            stdout       => 'STRING', # Result of print.
+            stdin  => 'STRING', # Input.
+            comp   => ARRAYREF, # Result of tab completion
+                                # (empy if no TAB or not a single choice).
+            line   => 'STRING', # Line after "_step", but before "eval".
+            eval   => 'STRING', # Evaled line.
+            stdout => ARRAYREF, # Result of print split by newlines.
         },
+        debug      => NUMBER,   # Default: 0 (Enable debugging for one case).
     },
 
 =cut
@@ -132,82 +155,191 @@ my @cases = (
         name             => 'simple line 1',
         input            => 'abc',
         expected_results => {
-            step => 'abc',
+            line   => 'abc',
+            stdout => [],
         }
     },
     {
         name             => 'simple line 2',
         input            => 'abc2',
         expected_results => {
-            step => 'abc2',
+            line   => 'abc2',
+            stdout => [],
         }
     },
 
-    # # Empty.
-    # {
-    #     name            => 'Empty',
-    #     input           => '',
-    #     expected_line   => '',
-    #     expected_output => '',
-    # },
-    # {
-    #     name            => 'Empty TAB completion',
-    #     input           => "$TAB",
-    #     expected_line   => '$str1 $str2',
-    #     expected_output => '',
-    # },
+    # History - Do these first so case order wont matter for others.
+    {
+        name             => 'History - default lines',
+        input            => 'hist',
+        nocolor          => ["stdout"],
+        expected_results => {
+            stdout => [ '1 q', '2 abc', '3 abc2', '4 hist', ],
+        },
+    },
+    {
+        name             => 'History - explicit line to show',
+        input            => 'hist 3',
+        nocolor          => ["stdout"],
+        expected_results => {
+            stdout => [ '1 abc2', '2 hist', '3 hist 3' ],
+        },
+    },
+    {
+        name             => 'History - complete the command "h"',
+        input            => 'h' . $TAB,
+        expected_results => {
+            comp   => [ "help", "hist" ],
+            stdout => [],
+        },
+    },
+    {
+        name             => 'History - complete the command "hi"',
+        input            => 'hi' . $TAB,
+        nocolor          => ["stdout"],
+        expected_results => {
+            comp   => [],
+            line   => '$repl->hist()',
+            stdout => [ '1 q', '2 abc', '3 abc2', '4 hist 3', '5 h', '6 hist' ],
+        },
+    },
 
-    # # Help.
-    # {
-    #     name            => 'Help',
-    #     input           => 'h',
-    #     expected_line   => '',
-    #     expected_output => '',
-    #     # Remove color.
-    #     # Normalize version.
-    # },
+    # Empty.
+    {
+        name             => 'Empty',
+        input            => '',
+        expected_results => {
+            line   => '',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Empty TAB completion',
+        input            => $TAB,
+        expected_results => {
+            comp   => $repl->{commands_and_variables},
+            stdout => [],
+        },
+    },
 
-    # # History.
-    # {
-    #     name            => 'History - default lines',
-    #     input           => 'hist',
-    #     expected_line   => '',
-    #     expected_output => '',
-    # },
-    # {
-    #     name            => 'History - 10 lines',
-    #     input           => 'hist 10',
-    #     expected_line   => '',
-    #     expected_output => '',
-    # },
+    # Print.
+    {
+        name             => 'Print literal',
+        input            => 'p 123',
+        expected_results => {
+            line   => 'p 123',
+            stdout => ['123'],
+        },
+    },
+    {
+        name             => 'Print TAB complete: "p<TAB>"',
+        input            => 'p' . $TAB,
+        expected_results => {
+            line   => 'p ',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Print TAB complete: "p<TAB><TAB"',
+        input            => 'p' . $TAB . $TAB,
+        expected_results => {
+            comp   => $repl->{vars_all},
+            line   => 'p ',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Print TAB complete: "p $<TAB>"',
+        input            => 'p $' . $TAB,
+        expected_results => {
+            comp   => $repl->{vars_scalar},
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Print TAB complete: p $o ',
+        input            => 'p $o' . $TAB,
+        expected_results => {
+            comp   => [ '$our_str', '$our_obj', '$our_coderef', ],
+            stdout => [],
+        },
+    },
+    {
+        name  => 'Print TAB complete: p $o<TAB>_ ',
+        input => 'p $o' . $TAB . '_',               # Does not expand after tab.
+        expected_results => {
+            comp   => [ '$our_str', '$our_obj', '$our_coderef', ],
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Print TAB complete: p $<TAB>_str ',
+        input            => 'p $o' . $TAB . '_str',
+        expected_results => {
+            comp   => [ '$our_str', '$our_obj', '$our_coderef', ],
+            stdout => [],
+        },
+    },
 
-    # # Print.
-    # {
-    #     name            => 'Print literal',
-    #     input           => 'p 123',
-    #     expected_line   => 'p 123',
-    #     expected_output => '123',
-    # },
-    # {
-    #     name            => 'Print TAB complete: p',
-    #     input           => "p$TAB",
-    #     expected_line   => 'p $coderef  $obj      $repl     $str1     $str2',
-    #     expected_output => 'p',
-    # },
+    # Arrow.
+    {
+        name             => 'Arrow - coderef "$my->("',
+        input            => '$my_coderef->' . $TAB,
+        expected_results => {
+            line   => '$my_coderef->(',
+            stdout => [],
+        },
+        skip => 1,
+    },
+    {
+        name             => 'Arrow - coderef "$our->("',
+        input            => '$our_coderef->' . $TAB,
+        expected_results => {
+            line   => '$our_coderef->(',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Arrow - method "$my->(" before closing ")"',
+        input            => '$my_coderef->' . $TAB . ')',
+        expected_results => {
+            line   => '$our_coderef->()',
+            stdout => [],
+        },
+        skip => 1,
+    },
+    {
+        name             => 'Arrow - method "$our->(" before closing ")"',
+        input            => '$our_coderef->' . $TAB . ')',
+        expected_results => {
+            line   => '$our_coderef->()',
+            stdout => [],
+        },
+    },
 
-    # {
-    #     name            => 'Print TAB complete: p $ ',
-    #     input           => 'p "$n' . $TAB . '123"',
-    #     expected_line   => '',
-    #     expected_output => '',
-    # },
+    # Help.
+    {
+        name             => 'Help',
+        input            => 'help',
+        nocolor          => ["stdout"],
+        expected_results => {
+            line   => '$repl->help()',    # "help" changes to this.
+            eval   => '1',                # Return value.
+            stdout => [
+                '',
+                ' Runtime::Debugger 0.01',
+                '',
+                ' <TAB>       - Show options.',
+                ' help        - Show this help section.',
+                ' hist [N=20] - Show last N commands.',
+                ' p DATA [#N] - Prety print data (with optional depth),',
+                ' q           - Quit debugger.',
+                '',
+                ''
+            ],
+        },
+    },
 
-    # {
-    #     name            => 'Print TAB complete: p $ ',
-    #     input           => "p \$$TAB",
-    #     expected_line   => 'p $coderef  $obj      $repl     $str1     $str2',
-    #     expected_output => 'p $',
-    # },
 );
 
 # Signals that a new character can be read from readline.
@@ -216,16 +348,61 @@ $repl->attr->{input_available_hook} = sub { $ready_to_read };
 
 for my $case ( @cases ) {
 
+    # Skip
+    if ( $case->{skip} ) {
+      SKIP: {
+            skip $case->{name};
+        }
+        next unless $case->{debug};
+    }
+
     # $ready_to_read = 1;
+
+    # Get results.
+    $repl->debug( 1 ) if $case->{debug};
     my $results_all      = $RUN->( $case->{input} );
     my $expected_results = $case->{expected_results};
     my @keys             = keys %$expected_results;
+    $repl->debug( 0 ) if $case->{debug};
+
+    # Update results.
+    my $nocolor = $case->{nocolor};
+    if ( $nocolor and @$nocolor ) {
+        for my $key ( @$nocolor ) {
+            my $val = $results_all->{$key};
+            my $ref = ref $val;
+            if ( $ref eq "SCALAR" ) {
+                $results_all->{$key} = colorstrip( $val );
+            }
+            elsif ( $ref eq "ARRAY" ) {
+                $_ = colorstrip( $_ ) for @$val;
+            }
+            else {
+                warn "Cannot apply 'nocolor' due to unsupport type '$ref'\n";
+                p $results_all;
+            }
+        }
+    }
+
+    # Limit results to expected_results.
     my %results;
     @results{@keys} = @$results_all{@keys};
 
-    # p \%results, "--maxdepth=0";
+    # Compare.
+    my $success = is_deeply \%results, $expected_results, $case->{name};
 
-    is_deeply \%results, $expected_results, $case->{name};
+    # Error dump.
+    if ( not $success or $case->{debug} ) {
+        say "";
+        say "GOT:";
+        p $results_all, "--maxdepth=0";
+
+        say "";
+        say "EXPECT:";
+        p $expected_results, "--maxdepth=0";
+
+        last;
+    }
 }
 
 # Explicitly stop the debugger.
