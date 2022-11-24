@@ -117,17 +117,12 @@ jobs:
       - name: Show perl version
         run: perl -V
 
-      - name: Install Module::Build dependencies
+      - name: Install Dependencies
         run: |
+          apt install -y libreadline-dev
           cpanm Module::Build~0.4004
           perl Build.PL
           perl Build installdeps
-
-    # - name: Install dependencies
-    #   uses: perl-actions/install-with-cpanm@v1
-    #   with:
-    #     cpanfile: "cpanfile"
-    #     args: "--with-suggests --with-recommends --with-test"
 
       - name: Run tests
         run: prove -lr t -v
