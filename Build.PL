@@ -8,11 +8,18 @@ Module::Build->VERSION( '0.4004' );
 
 my $class = Module::Build->subclass(
     code => q{
-        sub ACTION_install {
+        use ExtUtils::MakeMaker;
+        sub ACTION_installdeps {
             my ($s) = @_;
-            $s->_clear_cache;
-            $s->_check_for_source_command if os_type eq "Unix";
-            $s->SUPER::ACTION_install;
+            print "Checking if our version of ExtUtils::MakeMaker is ok\n";
+            my $minimum = "7.6502";
+            my $version = ExtUtils::MakeMaker->VERSION;
+            print "Need ExtUtils::MakeMaker $minimum (have $version)\n";
+            if ( $version < $minimum ) {
+                print "Fetching version $minimum from repo\n";
+                system "cpanm https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/archive/refs/tags/v7.65_02.tar.gz";
+            }
+            $s->SUPER::ACTION_installdeps;
         }
     },
 );
