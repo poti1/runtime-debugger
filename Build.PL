@@ -25,7 +25,7 @@ my $builder = Module::Build->new(
         'Class::Tiny'         => '1.008',
         'Module::Functions'   => '2.1.3',
     },
-    add_to_cleanup => [ 'Runtime-Debugger-*', 'build_dir/' ],
+    add_to_cleanup => [ 'Runtime-Debugger-*', 'build_dir/', 'MANIFEST*.bak' ],
     meta_merge     => {
         resources => {
             bugtracker => 'https://github.com/poti1/runtime-debugger/issues',

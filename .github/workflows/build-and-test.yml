@@ -27,7 +27,6 @@ jobs:
       - name: Install dependencies
         run: |
           perl Build.PL
-          perl Build
           perl Build installdeps
 
       - name: Prepare build_dir

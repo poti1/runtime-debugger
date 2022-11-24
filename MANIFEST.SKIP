@@ -64,8 +64,7 @@
 # Avoid prove files
 \B\.prove$
 
-# Avoid META and MYMETA files
-^META\.
+# Avoid MYMETA files
 ^MYMETA\.
 
 # Temp files for new META
@@ -85,7 +84,6 @@
 \bBuild.COM$
 \bBUILD.COM$
 \bbuild.com$
-MANIFEST\.SKIP
 
 # Avoid archives of this distribution
 \bRuntime-Debugger-[\d\.\_]+
