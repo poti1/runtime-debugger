@@ -28,11 +28,10 @@ jobs:
         run: |
           perl Build.PL
           perl Build installdeps
+          cpanm Test::CheckManifest
 
       - name: Prepare build_dir
         run: |
-          perl Build clean
-          perl Build manifest
           perl Build distdir
           BUILD_DIR=$(perl -MModule::Build -e 'print Module::Build->resume->dist_dir')
           mv -v $BUILD_DIR build_dir
