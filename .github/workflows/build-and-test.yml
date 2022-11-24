@@ -32,6 +32,7 @@ jobs:
           cpanm Test::CheckManifest
           perl Build.PL
           perl Build installdeps
+          echo "TERM=$TERM"
 
       - name: Prepare build_dir
         run: |
