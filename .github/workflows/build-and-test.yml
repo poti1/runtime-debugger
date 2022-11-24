@@ -119,7 +119,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          apt install -y libreadline-dev
           cpanm Module::Build~0.4004
           perl Build.PL
           perl Build installdeps
