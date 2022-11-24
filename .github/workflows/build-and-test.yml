@@ -113,6 +113,9 @@ jobs:
           name: build_dir
           path: .
 
+      - name: Show perl version
+        run: perl -V
+
       - name: Install Module::Build dependencies
         run: |
           echo "TERM=$TERM"
