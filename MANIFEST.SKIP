@@ -64,7 +64,8 @@
 # Avoid prove files
 \B\.prove$
 
-# Avoid MYMETA files
+# Avoid META and MYMETA files
+^META\.
 ^MYMETA\.
 
 # Temp files for new META
@@ -76,10 +77,6 @@
 # Avoid AppVeyor file
 ^\.?appveyor.yml
 #!end included /home/tim/perl5/perlbrew/perls/perl-5.34.1/lib/5.34.1/ExtUtils/MANIFEST.SKIP
-
-\B\.git\b
-# Avoid configuration metadata file
-^MYMETA\.
 
 # Avoid Module::Build generated and utility files.
 \bBuild$
