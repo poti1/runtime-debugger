@@ -22,8 +22,6 @@ jobs:
         run: perl -v
       - name: Install readline
         run: apt install -y libreadline-dev
-      - name: Install Term::ReadLine::Gnu
-        run: cpanm Term::ReadLine::Gnu -v
       - name: Run Tests
         env:
           AUTHOR_TESTING: 1
