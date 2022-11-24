@@ -18,12 +18,17 @@ my $RUN;
 my $repl;
 
 # Sample package to test out the readline function.
-package MyObj {
+{
+
+    package MyObj;
+
     sub Func1 { "My-Func1" }
     sub Func2 { "My-Func2" }
 }
 
-package MyTest {
+{
+
+    package MyTest;
 
     # Lexical variables.
     my $my_str     = "Func1";

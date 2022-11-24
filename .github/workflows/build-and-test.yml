@@ -30,7 +30,6 @@ jobs:
 
       - name: Find auto-build-and-test-dist
         run: |
-          alias auto-build-and-test-dist
           declare -f auto-build-and-test-dist
           which auto-build-and-test-dist
 
