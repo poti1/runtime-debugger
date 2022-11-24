@@ -119,7 +119,7 @@ jobs:
 
       - name: "Detect and fix faulty module: ExtUtils::Liblist::Kid"
         run: |
-          version=$(perl -MExtUtils::MakeMaker -l 'print ExtUtils::MakeMaker->VERSION')
+          version=$(perl -MExtUtils::MakeMaker -e 'print ExtUtils::MakeMaker->VERSION')
           echo "ExtUtils::MakeMaker->VERSION=$version"
           [[ "$version" < "7.6502" ]] && cpanm git@github.com:Perl-Toolchain-Gang/ExtUtils-MakeMaker.git
 
