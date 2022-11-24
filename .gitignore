@@ -2,6 +2,7 @@ Makefile
 Makefile.old
 Build
 Build.bat
+MYMETA.*
 .build/
 _build/
 cover_db/
