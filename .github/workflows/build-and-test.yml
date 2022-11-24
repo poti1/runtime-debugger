@@ -38,6 +38,11 @@ jobs:
           RELEASE_TESTING: 1
         run: perl Build test
 
+      - name: Prepare artifact for upload
+        run: |
+          BUILD_DIR=$(perl -MModule::Build -e 'print Module::Build->resume->dist_dir')
+          mv $BUILD_DIR build_dir
+
       - name: Upload artifact for next steps
         uses: actions/upload-artifact@v3
         with:
