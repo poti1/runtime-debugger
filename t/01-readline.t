@@ -414,4 +414,4 @@ for my $case ( @cases ) {
 # Will write history to a file.
 # eval { $repl->_exit( "test" ) };
 
-done_testing( 22 );
+done_testing( 21 );
