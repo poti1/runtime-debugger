@@ -118,11 +118,8 @@ jobs:
           cpanfile: "cpanfile"
           args: "--with-suggests --with-recommends --with-test"
 
-      # run: |
-      #   cpanm Module::Build~0.4004
-      #   perl Build.PL
-      #   perl Build
-      #   perl Build installdeps
+      - name: Install Module::Build dependencies
+        run: cpanm Module::Build~0.4004
 
       - name: Run tests
         run: prove -lr t
