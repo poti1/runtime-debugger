@@ -30,18 +30,24 @@ jobs:
           perl Build
           perl Build installdeps
 
-      - name: Run tests
+      - name: Prepare build_dir
+        run: |
+          perl Build.PL
+          perl Build clean
+          perl Build manifest
+          perl Build distdir
+          BUILD_DIR=$(perl -MModule::Build -e 'print Module::Build->resume->dist_dir')
+          mv $BUILD_DIR build_dir
+
+      - name: Run tests (sanity check)
         env:
           AUTHOR_TESTING: 1
           AUTOMATED_TESTING: 1
           EXTENDED_TESTING: 1
           RELEASE_TESTING: 1
-        run: perl Build test
-
-      - name: Prepare artifact for upload
         run: |
-          BUILD_DIR=$(perl -MModule::Build -e 'print Module::Build->resume->dist_dir')
-          mv $BUILD_DIR build_dir
+          cd build_dir
+          perl Build test
 
       - name: Upload artifact for next steps
         uses: actions/upload-artifact@v3
