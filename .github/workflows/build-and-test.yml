@@ -24,7 +24,10 @@ jobs:
           AUTOMATED_TESTING: 1
           EXTENDED_TESTING: 1
           RELEASE_TESTING: 1
-        run: auto-build-and-test-dist
+        run: |
+          perl -V
+          apt install -y libreadline-dev
+          auto-build-and-test-dist
       - uses: actions/upload-artifact@v3
         with:
           name: build_dir
