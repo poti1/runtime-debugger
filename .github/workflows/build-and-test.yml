@@ -116,7 +116,6 @@ jobs:
 
       - name: Install Module::Build dependencies
         run: |
-    #     apt install -y libreadline-dev
           echo "TERM=$TERM"
           cpanm Module::Build~0.4004
           perl Build.PL
