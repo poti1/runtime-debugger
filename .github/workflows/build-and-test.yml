@@ -37,7 +37,7 @@ jobs:
           perl Build manifest
           perl Build distdir
           BUILD_DIR=$(perl -MModule::Build -e 'print Module::Build->resume->dist_dir')
-          mv $BUILD_DIR build_dir
+          mv -v $BUILD_DIR build_dir
 
       - name: Run tests (sanity check)
         env:
@@ -47,6 +47,7 @@ jobs:
           RELEASE_TESTING: 1
         run: |
           cd build_dir
+          perl Build.PL
           perl Build test
 
       - name: Upload artifact for next steps
