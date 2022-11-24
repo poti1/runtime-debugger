@@ -71,6 +71,7 @@ my $repl;
         ord $char;
     };
 
+    # TODO: Remove later.
     # Signals that a new character can be read from readline.
     # $repl->attr->{input_available_hook} = sub { 1 };
 
@@ -86,6 +87,7 @@ my $repl;
         @ret;
     };
 
+    # TODO: Remove later.
     # my $completion_return_hook;
     # $repl->attr->{completion_display_matches_hook} = sub {
     #     my ( $matches, $num_matches, $max_length ) = @_;
@@ -349,6 +351,7 @@ my @cases = (
 
 );
 
+# TODO: Remove later.
 # Signals that a new character can be read from readline.
 my $ready_to_read = 0;
 $repl->attr->{input_available_hook} = sub { $ready_to_read };
@@ -410,6 +413,7 @@ for my $case ( @cases ) {
     }
 }
 
+# TODO: Remove later.
 # Explicitly stop the debugger.
 # Will write history to a file.
 # eval { $repl->_exit( "test" ) };
