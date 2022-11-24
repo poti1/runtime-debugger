@@ -6,7 +6,18 @@ use warnings;
 use Module::Build;
 Module::Build->VERSION( '0.4004' );
 
-my $builder = Module::Build->new(
+my $class = Module::Build->subclass(
+    code => q{
+        sub ACTION_install {
+            my ($s) = @_;
+            $s->_clear_cache;
+            $s->_check_for_source_command if os_type eq "Unix";
+            $s->SUPER::ACTION_install;
+        }
+    },
+);
+
+my $builder = $class->new(
     module_name        => 'Runtime::Debugger',
     license            => 'artistic_2',
     dist_author        => q{Tim Potapov <tim.potapov[AT]gmail.com>},
