@@ -18,16 +18,17 @@ jobs:
       image: perldocker/perl-tester:5.34
     steps:
       - uses: actions/checkout@v3
+      - name: Show Perl Version
+        run: perl -v
+      - name: Install readline
+        run: apt install -y libreadline-dev
       - name: Run Tests
         env:
           AUTHOR_TESTING: 1
           AUTOMATED_TESTING: 1
           EXTENDED_TESTING: 1
           RELEASE_TESTING: 1
-        run: |
-          perl -V
-          apt install -y libreadline-dev
-          auto-build-and-test-dist
+        run: auto-build-and-test-dist
       - uses: actions/upload-artifact@v3
         with:
           name: build_dir
