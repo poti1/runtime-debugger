@@ -22,11 +22,11 @@ jobs:
       - name: Show Perl Version
         run: perl -v
 
-     #- name: Install Dependencies
-     #  run: |
-     #    perl Build.PL
-     #    perl Build
-     #    perl Build installdeps
+      - name: Install Dependencies
+        run: |
+          perl Build.PL
+          perl Build
+          perl Build installdeps
 
       - name: Find auto-build-and-test-dist
         run: |
@@ -44,7 +44,8 @@ jobs:
           AUTOMATED_TESTING: 1
           EXTENDED_TESTING: 1
           RELEASE_TESTING: 1
-        run: auto-build-and-test-dist
+      # run: auto-build-and-test-dist # (Not working for Term::ReadLine::Gnu)
+        run: perl Build test
       - uses: actions/upload-artifact@v3
         with:
           name: build_dir
