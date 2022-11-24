@@ -33,6 +33,11 @@ jobs:
           which auto-build-and-test-dist
           cat `which auto-build-and-test-dist`
 
+      - name: Find cpan-install-build-deps
+        run: |
+          which cpan-install-build-deps
+          cat `which cpan-install-build-deps`
+
       - name: Run Tests
         env:
           AUTHOR_TESTING: 1
