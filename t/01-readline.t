@@ -7,8 +7,6 @@ use Term::ANSIColor qw( colorstrip );
 use feature         qw(say);
 
 BEGIN {
-    use_ok( 'Term::ReadLine' ) || print "Bail out!\n";
-    use_ok( 'Term::ReadLine::Gnu' ) || print "Bail out!\n";
     use_ok( 'Runtime::Debugger' ) || print "Bail out!\n";
 }
 
@@ -418,4 +416,4 @@ for my $case ( @cases ) {
 # Will write history to a file.
 # eval { $repl->_exit( "test" ) };
 
-done_testing( 23 );
+done_testing( 21 );

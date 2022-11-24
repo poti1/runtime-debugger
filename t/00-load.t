@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Test::More;
 
-plan tests => 1;
+plan tests => 3;
 
 BEGIN {
     use_ok( 'Term::ReadLine' ) || print "Bail out!\n";
