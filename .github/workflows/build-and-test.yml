@@ -31,6 +31,7 @@ jobs:
       - name: Find auto-build-and-test-dist
         run: |
           which auto-build-and-test-dist
+          cat `which auto-build-and-test-dist`
 
       - name: Run Tests
         env:
