@@ -113,10 +113,16 @@ jobs:
           path: .
 
       - name: Install dependencies
-        run: |
-          perl Build.PL
-          perl Build
-          perl Build installdeps
+        uses: perl-actions/install-with-cpanm@v1
+        with:
+          cpanfile: "cpanfile"
+          args: "--with-suggests --with-recommends --with-test"
+
+      # run: |
+      #   cpanm Module::Build~0.4004
+      #   perl Build.PL
+      #   perl Build
+      #   perl Build installdeps
 
       - name: Run tests
         run: prove -lr t
