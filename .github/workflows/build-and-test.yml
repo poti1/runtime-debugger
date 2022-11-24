@@ -32,7 +32,6 @@ jobs:
 
       - name: Prepare build_dir
         run: |
-          perl Build.PL
           perl Build clean
           perl Build manifest
           perl Build distdir
