@@ -117,7 +117,7 @@ jobs:
       - name: Show perl version
         run: perl -V
 
-      - name: Detect and fix faulty module: ExtUtils::Liblist::Kid
+      - name: "Detect and fix faulty module: ExtUtils::Liblist::Kid"
         run: |
           version=$(perl -MExtUtils::MakeMaker -l 'print ExtUtils::MakeMaker->VERSION')
           echo "ExtUtils::MakeMaker->VERSION=$version"
