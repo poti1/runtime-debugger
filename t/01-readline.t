@@ -2,7 +2,7 @@
 use 5.006;
 use strict;
 use warnings;
-use Test::More;
+use Test::More tests => 53;
 use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw(say);
@@ -56,19 +56,89 @@ sub _setup_testmode_debugger {
 }
 
 sub _get_expected_vars {
-    { vars_all => [], };
+    {
+        commands               => [ 'help', 'hist', 'p', 'q' ],
+        commands_and_variables => [
+            '$EOL',         '$INSTR',
+            '$RUN',         '$TAB',
+            '$TAB_ALL',     '$completion_return',
+            '$eval_return', '$my_coderef',
+            '$my_obj',      '$my_str',
+            '$our_coderef', '$our_obj',
+            '$our_str',     '$repl',
+            '$stdin',       '$stdout',
+            '$step_return', '%my_hash',
+            '%our_hash',    '@my_arr',
+            '@our_arr',     'help',
+            'hist',         'p',
+            'q'
+        ],
+        debug        => 0,
+        history_file => "$ENV{HOME}/.runtime_debugger_testmode.info",
+
+        # peek_all               => 'HASH(0x55e5a86f9148)',
+        # peek_my                => 'HASH(0x55e5a873f7f8)',
+        # peek_our               => 'HASH(0x55e5a873fcd8)',
+        vars_all => [
+            '@our_arr',     '%our_hash',
+            '$our_str',     '$our_obj',
+            '$our_coderef', '@my_arr',
+            '%my_hash',     '$step_return',
+            '$stdout',      '$stdin',
+            '$repl',        '$my_str',
+            '$my_obj',      '$my_coderef',
+            '$eval_return', '$completion_return',
+            '$TAB_ALL',     '$TAB',
+            '$RUN',         '$INSTR',
+            '$EOL'
+        ],
+        vars_array  => [ '@our_arr',     '@my_arr' ],
+        vars_code   => [ '$our_coderef', '$RUN' ],
+        vars_global =>
+          [ '$our_coderef', '$our_obj', '$our_str', '%our_hash', '@our_arr' ],
+        vars_hash    => [ '%our_hash', '%my_hash' ],
+        vars_lexical => [
+            '$EOL',         '$INSTR',
+            '$RUN',         '$TAB',
+            '$TAB_ALL',     '$completion_return',
+            '$eval_return', '$my_coderef',
+            '$my_obj',      '$my_str',
+            '$repl',        '$stdin',
+            '$stdout',      '$step_return',
+            '%my_hash',     '@my_arr'
+        ],
+        vars_obj => [ '$our_obj', '$repl' ],
+        vars_ref =>
+          [ '$our_obj', '$our_coderef', '$repl', '$completion_return', '$RUN' ],
+        vars_ref_else => ['$completion_return'],
+        vars_scalar   => [
+            '$our_str',     '$our_obj',
+            '$our_coderef', '$step_return',
+            '$stdout',      '$stdin',
+            '$repl',        '$my_str',
+            '$my_obj',      '$my_coderef',
+            '$eval_return', '$completion_return',
+            '$TAB_ALL',     '$TAB',
+            '$RUN',         '$INSTR',
+            '$EOL'
+        ],
+        vars_string => [
+            '$our_str', '$step_return', '$stdout',     '$stdin',
+            '$my_str',  '$my_obj',      '$my_coderef', '$eval_return',
+            '$TAB_ALL', '$TAB',         '$INSTR',      '$EOL'
+        ],
+    };
 }
 
 sub _test_repl_vars {
 
-    # Test specific keys.
+    # Test specific repl keys.
     my $expected = _get_expected_vars();
 
     for ( sort keys %$expected ) {
         is_deeply $repl->{$_}, $expected->{$_}, "repl->{$_} is correct"
           or say explain $repl->{$_};
     }
-
 }
 
 
@@ -146,8 +216,7 @@ sub _test_repl_vars {
 # Test repl strucure.
 _setup_testmode_debugger();
 $RUN->();    # Run once to setup variables for testing (like "vars_all").
-
-# _test_repl_vars();
+_test_repl_vars();
 
 =head1 Sample test case
 
@@ -164,7 +233,8 @@ $RUN->();    # Run once to setup variables for testing (like "vars_all").
             eval   => 'STRING', # Evaled line.
             stdout => ARRAYREF, # Result of print split by newlines.
         },
-        debug      => NUMBER,   # Default: 0 (Enable debugging for one case).
+        todo       => INT,      # Default: 0 (Mark the case as not ready).
+        debug      => INT,      # Default: 0 (Enable debugging for one case).
     },
 
 =cut
@@ -223,6 +293,68 @@ my @cases = (
             line   => '$repl->hist()',
             stdout => [ '1 q', '2 abc', '3 abc2', '4 hist 3', '5 h', '6 hist' ],
         },
+    },
+
+    # Help.
+    {
+        name             => 'Help',
+        input            => 'help',
+        nocolor          => ["stdout"],
+        expected_results => {
+            line   => '$repl->help()',    # "help" changes to this.
+            eval   => '1',                # Return value.
+            stdout => [
+                '',
+                ' Runtime::Debugger 0.01',
+                '',
+                ' <TAB>       - Show options.',
+                ' help        - Show this help section.',
+                ' hist [N=20] - Show last N commands.',
+                ' p DATA [#N] - Prety print data (with optional depth),',
+                ' q           - Quit debugger.',
+                '',
+                ''
+            ],
+        },
+    },
+    {
+        name             => 'Help - short "h"',
+        input            => 'h',
+        expected_results => {
+            line   => 'h',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Help - short "h<TAB>"',
+        input            => 'h' . $TAB,
+        expected_results => {
+            comp   => [ 'help', 'hist' ],
+            line   => 'h',
+            stdout => [],
+        },
+    },
+    {
+        name             => 'Help - upon running _step first time',
+        input            => '',
+        nocolor          => ["stdout"],
+        expected_results => {
+            line   => '$repl->help()',    # "help" changes to this.
+            eval   => '1',                # Return value.
+            stdout => [
+                '',
+                ' Runtime::Debugger 0.01',
+                '',
+                ' <TAB>       - Show options.',
+                ' help        - Show this help section.',
+                ' hist [N=20] - Show last N commands.',
+                ' p DATA [#N] - Prety print data (with optional depth),',
+                ' q           - Quit debugger.',
+                '',
+                ''
+            ],
+        },
+        todo => 1,
     },
 
     # Empty.
@@ -302,7 +434,24 @@ my @cases = (
         },
     },
 
-    # Arrow.
+
+    #
+    # Scalars.
+    #
+
+    # All scalars.
+    {
+        name             => 'Scalar sigil - all scalars"',
+        input            => '$' . $TAB,
+        expected_results => {
+            comp => $repl->{vars_scalar},
+
+            # Should include all: $scalar $array $hash $arrayref $hashref.
+        },
+        todo => 1,
+    },
+
+    # Arrow - Code reference.
     {
         name             => 'Arrow - coderef "$my->("',
         input            => '$my_coderef->' . $TAB,
@@ -310,7 +459,7 @@ my @cases = (
             line   => '$my_coderef->(',
             stdout => [],
         },
-        skip => 1,
+        todo => 1,
     },
     {
         name             => 'Arrow - coderef "$our->("',
@@ -320,73 +469,184 @@ my @cases = (
             stdout => [],
         },
     },
+
+    # Arrow - Method call.
     {
-        name             => 'Arrow - method "$my->(" before closing ")"',
-        input            => '$my_coderef->' . $TAB . ')',
+        name  => 'Scalar Sigil, Arrow - method "$my->(" before closing ")"',
+        input => '$my_coderef->' . $TAB . ')',
         expected_results => {
             line   => '$our_coderef->()',
             stdout => [],
         },
-        skip => 1,
+        todo => 1,
     },
     {
-        name             => 'Arrow - method "$our->(" before closing ")"',
-        input            => '$our_coderef->' . $TAB . ')',
+        name  => 'Scalar Sigil, Arrow - method "$our->(" before closing ")"',
+        input => '$our_coderef->' . $TAB . ')',
         expected_results => {
             line   => '$our_coderef->()',
             stdout => [],
         },
     },
 
-    # Help.
+
+    #
+    # Arrays
+    #
+
+    # All arrays.
     {
-        name             => 'Help',
-        input            => 'help',
-        nocolor          => ["stdout"],
+        name             => 'Array sigil - all arrays"',
+        input            => '@' . $TAB,
         expected_results => {
-            line   => '$repl->help()',    # "help" changes to this.
-            eval   => '1',                # Return value.
-            stdout => [
-                '',
-                ' Runtime::Debugger 0.01',
-                '',
-                ' <TAB>       - Show options.',
-                ' help        - Show this help section.',
-                ' hist [N=20] - Show last N commands.',
-                ' p DATA [#N] - Prety print data (with optional depth),',
-                ' q           - Quit debugger.',
-                '',
-                ''
-            ],
+            comp => $repl->{vars_array},
+
+            # Should include all: @array @hash
         },
+        todo => 1,
     },
+
+    # Append (optional) arrow and bracket.
     {
-        name             => 'Help - short "h"',
-        input            => 'h',
+        name             => 'Scalar Sigil - array "$my["',
+        input            => '$my_array' . $TAB,
         expected_results => {
-            line   => 'h',
+            line   => '$my_array[',
             stdout => [],
         },
+        todo => 1,
     },
     {
-        name             => 'Help - short "h<TAB>"',
-        input            => 'h' . $TAB,
+        name             => 'Scalar Sigil - array "$our["',
+        input            => '$our_array' . $TAB,
         expected_results => {
-            comp   => [ 'help', 'hist' ],
-            line   => 'h',
+            line   => '$our_array[',
             stdout => [],
         },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - arrayref "$my->["',
+        input            => '$my_arrayref->' . $TAB,
+        expected_results => {
+            line   => '$my_arrayref->{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - arrayref "$our->["',
+        input            => '$our_arrayref->' . $TAB,
+        expected_results => {
+            line   => '$our_arrayref->{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+
+    # Array slice.
+
+    # Hash slice.
+
+    #
+    # Hashs.
+    #
+
+    # All hashs.
+    {
+        name             => 'Hash sigil - all hashs"',
+        input            => '%' . $TAB,
+        expected_results => {
+            comp => $repl->{vars_hash},
+
+            # Should include all: %hash
+        },
+        todo => 1,
+    },
+
+    # Append (optional) arrow and brace.
+    {
+        name             => 'Scalar Sigil- hash "$my{"',
+        input            => '$my_hash{' . $TAB,
+        expected_results => {
+            comp   => [],
+            line   => '$my_hash{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil- hash "$our{"',
+        input            => '$our_hash{' . $TAB,
+        expected_results => {
+            comp   => [],
+            line   => '$our_hash{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - hashref "$my->{"',
+        input            => '$my_hashref->' . $TAB,
+        expected_results => {
+            line   => '$my_hashref->{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - hashref "$our->{"',
+        input            => '$our_hashref->' . $TAB,
+        expected_results => {
+            line   => '$our_hashref->{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+
+    # Append (optional) arrow, brace - keys
+    {
+        name             => 'Scalar Sigil, Arrow - hash "$my{"',
+        input            => '$my_hash' . $TAB,
+        expected_results => {
+            line   => '$my_hash{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - hash "$our{"',
+        input            => 'our_hash' . $TAB,
+        expected_results => {
+            line   => '$our_hash{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - hashref "$my->{KEYS"',
+        input            => '$my_hashref->{' . $TAB,
+        expected_results => {
+            comp   => [],
+            line   => '$my_hashref->{',
+            stdout => [],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Scalar Sigil, Arrow - hashref "$our->{KEYS"',
+        input            => '$our_hashref->{' . $TAB,
+        expected_results => {
+            comp   => [],
+            line   => '$our_hashref->{',
+            stdout => [],
+        },
+        todo => 1,
     },
 
 );
 
 for my $case ( @cases ) {
-
-    # Skip the test case.
-    if ( $case->{skip} ) {
-        pass $case->{name};
-        next unless $case->{debug};
-    }
 
     # Run the debugger with an input string and capture all the results.
     $repl->debug( 1 ) if $case->{debug};
@@ -419,10 +679,16 @@ for my $case ( @cases ) {
     @results{@keys} = @$results_all{@keys};
 
     # Compare.
-    my $success = is_deeply \%results, $expected_results, $case->{name};
+    my $fail;
+  TODO: {
+        local $TODO = $case->{name} if $case->{todo};
+
+        # todo_skip $case->{name}, 1 if $case->{todo};
+        $fail = not is_deeply \%results, $expected_results, $case->{name};
+    }
 
     # Error dump.
-    if ( not $success or $case->{debug} ) {
+    if ( $case->{debug} or ( $fail and !$case->{todo} ) ) {
         say "";
         say "GOT:";
         say explain $results_all;
@@ -435,4 +701,3 @@ for my $case ( @cases ) {
     }
 }
 
-done_testing( 22 );
