@@ -32,55 +32,94 @@ use parent            qw( Exporter );
 use subs              qw( p uniq );
 
 our $VERSION = '0.07';
-our @EXPORT  = qw( run h p );
+our @EXPORT  = qw( run p );
 
 =head1 NAME
 
 Runtime::Debugger - Easy to use REPL with existing lexicals support.
 
+(empahsis on "existing" since I have not yet found this support in others modules).
+
 =head1 SYNOPSIS
 
-tl;dr - Easy to use REPL with existing lexicals support.
+Start the debugger:
 
-(empahsis on "existing" since I have not yet found this support
-in others modules).
+    perl -MRuntime::Debugger -E 'eval run'
 
-Try with this command line:
+Same, but with some variables to play with:
 
- perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
+    perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
 
 =head1 DESCRIPTION
 
-One can usually just do this:
+"What? Another debugger? What about ... ?"
 
- # Insert this where you want to pause:
- $DB::single = 1;
+=head2 perl5db.pl
 
- # Then run the perl debugger to navigate there quickly:
- PERLDBOPT='Nonstop' perl -d my_script
+The standard perl debugger (C<perl5db.pl>) is a powerful tool.
 
-If that works for then great and dont' bother using this module!
+Using C<per5db.pl>, one would normally be able to do this:
 
-Unfortunately for me, it was not working due to the scenario
-in which a script evals another perl test file and I would have
-liked to pause inside the test and see whats going on without
-having to keep rerunning the whole test over and over.
+    # Insert a breakpoint in your code:
+    $DB::single = 1;
 
-This module basically drops in a read,evaludate,print loop (REPL)
-wherever you need like so:
+    # Then run the perl debugger to navigate there quickly:
+    PERLDBOPT='Nonstop' perl -d my_script
+
+If that works for you, then dont' bother with this module!
+(joke. still try it.)
+
+=head2 Dilemma
+
+I have this scenario:
+
+ - A perl script gets executed.
+ - The script calls a support module.
+ - The module reads a test file.
+ - The module string evals the string contents of the test file.
+ - The test takes possibly minutes to run (Selenium).
+ - The test is failing.
+ - Not sure what is failing.
+
+Normal workflow would be:
+
+ - Step 1: Apply a fix.
+ - Step 2: Run the test.
+ - Step 3: Wait ... wait ... wait.
+ - Step 4: Goto Step 1 if test fails.
+
+=head2 Solution
+
+This module basically inserts a read, evaluate, print loop (REPL)
+wherever you need it.
 
     use Runtime::Debugger;
-    eval run;                # Not sure how to avoid using eval here while
-                             # keeping access to the top level lexical scope.
-                             # (Maybe through abuse of PadWalker and modifying
-                             # input dynamically.)
-                             # Any ideas ? :)
+    eval run;
+
+=head2 Tab Completion
+
+The module support rich tab completion support:
+
+ - Press TAB with no input to view commands and available variables in the current scope.
+ -
+
+TODO
 
 Press tab to autocomplete any lexical variables in scope (where "eval run" is found).
 
 Saves history locally.
 
 Can use 'p' to pretty print a variable or structure.
+
+
+
+=head2 Ideas
+
+Not sure how to avoid using eval here while keeping access to the top level lexical scope.
+
+(Maybe through abuse of PadWalker and modifying input dynamically.)
+
+Any ideas ? :)
 
 =head2 New Variables
 
@@ -112,6 +151,8 @@ Sets C<$@> to the exit reason like 'INT' (Control-C) or 'q' (Normal exit/quit).
 
 sub run {
     <<'CODE';
+    use strict;
+    use warnings;
     my $repl = Runtime::Debugger->_init;
     while ( 1 ) {
         eval $repl->_step;
@@ -344,7 +385,7 @@ sub _define_commands {
         "help",    # Changed in _step to $repl->help().
         "hist",    # Changed in _step to $repl->hist().
         "p",       # Exporting it.
-        "q",       # Exporting it.
+        "q",       # Used in _step to stop the repl.
     );
 }
 

@@ -15,6 +15,8 @@ Runtime-Debugger
 
 Runtime::Debugger - Easy to use REPL with existing lexicals support.
 
+(empahsis on "existing" since I have not yet found this support in others modules).
+
 INSTALLATION
 
 To install this module, run the following commands:
@@ -23,6 +25,16 @@ To install this module, run the following commands:
 	./Build
 	./Build test
 	./Build install
+
+USAGE
+
+Start the debugger:
+
+    perl -MRuntime::Debugger -E 'eval run'
+
+Same, but with some variables to play with:
+
+    perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
 
 SUPPORT AND DOCUMENTATION
 

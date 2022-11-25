@@ -3,21 +3,79 @@ use 5.006;
 use strict;
 use warnings;
 use Test::More;
+use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw(say);
 
-BEGIN {
-    use_ok( 'Runtime::Debugger' ) || print "Bail out!\n";
-}
 
+#
+# Setup Debugger.
+#
+
+my $RUN;                                # Input: string, Output: data structure.
+my $repl = Runtime::Debugger->_init;    # Scope recorded during first "_step".
+my $INSTR;                              # Simulated input string.
+my $completion_return;                  # Possible completions.
+
+# Special keyboard mappings.
 my $EOL     = "\cM";    # Append to string to trigger end of line.
 my $TAB     = "\cI";    # Add to string to autocomplete.
 my $TAB_ALL = "\cI\e*"; # Add to string to autocomplete plus insert all matches.
                         # This calls "_complete" multiple times.
-my $RUN;
-my $repl;
 
-# Sample package to test out the readline function.
+sub _setup_testmode_debugger {
+
+    $Runtime::Debugger::VERSION = "0.01";    # To make testing version easier.
+
+    # Use a separate history file.
+    my $history_file = "$ENV{HOME}/.runtime_debugger_testmode.info";
+    unlink $history_file if -e $history_file;
+    $repl->{history_file} = $history_file;
+    $repl->_restore_history;
+
+    # Avoiding the use of getc for testing.
+    $repl->attr->{getc_function} = sub {
+        return 0 if not $INSTR;
+        my $char;
+        ( $char, $INSTR ) = $INSTR =~ / ^ (.) (.*) $ /x;
+        ord $char;
+    };
+
+    # Wrapper arround the main completion function to capture
+    # the results from "_complete".
+    # (Its a bit tricky to capture the completions).
+    $repl->attr->{attempted_completion_function} = sub {
+        my ( $text, @possible ) = $repl->_complete( @_ );
+        $completion_return = [@possible];    # Save possible completions.
+        ( $text, @possible );    # Return like normally would happen.
+    };
+
+    # Do not show prompt messages.
+    open my $NULL, ">", "/dev/null" or die $!;
+    $repl->attr->{outstream} = $NULL;
+}
+
+sub _get_expected_vars {
+    { vars_all => [], };
+}
+
+sub _test_repl_vars {
+
+    # Test specific keys.
+    my $expected = _get_expected_vars();
+
+    for ( sort keys %$expected ) {
+        is_deeply $repl->{$_}, $expected->{$_}, "repl->{$_} is correct"
+          or say explain $repl->{$_};
+    }
+
+}
+
+
+#
+# Sample packages to test out the readline function.
+#
+
 {
 
     package MyObj;
@@ -29,6 +87,8 @@ my $repl;
 {
 
     package MyTest;
+
+    use Runtime::Debugger;    # to be able to use: "run", "h", "p".
 
     # Lexical variables.
     my $my_str     = "Func1";
@@ -43,59 +103,6 @@ my $repl;
     our %our_hash    = qw(hash our);
     our $our_coderef = sub { "coderef-our: @_" };
     our $our_obj     = bless { type => "our" }, "MyObj";
-
-    #
-    # Setup Debugger.
-    #
-
-    use Runtime::Debugger;
-
-    $Runtime::Debugger::VERSION  = "0.01";    # To make testing easier.
-    $ENV{RUNTIME_DEBUGGER_DEBUG} = 0;         # Just for debugging the test.
-    $repl                        = Runtime::Debugger->_init;
-
-    # Use separate history file.
-    my $history_file = "$ENV{HOME}/.runtime_debugger_testmode.info";
-    unlink $history_file if -e $history_file;
-    $repl->{history_file} = $history_file;
-    $repl->_restore_history;
-
-    # Avoid using getc for testing (to not have prompts).
-    my $INSTR;
-    $repl->attr->{getc_function} = sub {
-        return 0 if not $INSTR;
-        my $char;
-        ( $char, $INSTR ) = $INSTR =~ / ^ (.) (.*) $ /x;
-        ord $char;
-    };
-
-    # TODO: Remove later.
-    # Signals that a new character can be read from readline.
-    # $repl->attr->{input_available_hook} = sub { 1 };
-
-    # Wrapper arround the main completion function to capture
-    # the results from "_complete".
-    my $completion_return;
-    $repl->attr->{attempted_completion_function} = sub {
-        my ( $text, $line, $start, $end ) = @_;
-        my @ret   = $repl->_complete( @_ );
-        my @words = @ret;
-        shift @words;    # Skip exisiing text.
-        $completion_return = \@words;
-        @ret;
-    };
-
-    # TODO: Remove later.
-    # my $completion_return_hook;
-    # $repl->attr->{completion_display_matches_hook} = sub {
-    #     my ( $matches, $num_matches, $max_length ) = @_;
-    #     say "matches_hook:";
-    #     p \@_, "--maxdepth=0";
-    #     $repl->term->display_match_list( $matches );
-    #     $repl->term->forced_update_display;
-    # };
-
-    open my $NULL, ">", "/dev/null" or die $!;
 
     # Run this coderef in each case to get the Variables
     # in this scope.
@@ -116,9 +123,8 @@ my $repl;
             open STDOUT, ">",  \$stdout or die $!;
             open STDERR, ">>", \$stdout or die $!;
 
-            $repl->attr->{outstream} = $NULL;
-            $step_return             = $repl->_step;
-            $eval_return             = eval $step_return // "";
+            $step_return = $repl->_step;
+            $eval_return = eval $step_return // "";
             chomp $stdout;
         }
 
@@ -130,13 +136,21 @@ my $repl;
             stdout => [ split /\n/, $stdout ],    # Much easier to debug later.
         };
     };
-
-    # Run once to setup variables for testins (like "vars_all").
-    $RUN->();
 }
 
+
+#
+# Test cases.
+#
+
+# Test repl strucure.
+_setup_testmode_debugger();
+$RUN->();    # Run once to setup variables for testing (like "vars_all").
+
+# _test_repl_vars();
+
 =head1 Sample test case
-    
+
     # This should be enough data to test the module.
     {
         name             => 'STRING',
@@ -366,29 +380,20 @@ my @cases = (
 
 );
 
-# TODO: Remove later.
-# Signals that a new character can be read from readline.
-my $ready_to_read = 0;
-$repl->attr->{input_available_hook} = sub { $ready_to_read };
-
 for my $case ( @cases ) {
 
-    # Skip
+    # Skip the test case.
     if ( $case->{skip} ) {
         pass $case->{name};
         next unless $case->{debug};
     }
 
-    # $ready_to_read = 1;
-
-    # Get results.
+    # Run the debugger with an input string and capture all the results.
     $repl->debug( 1 ) if $case->{debug};
-    my $results_all      = $RUN->( $case->{input} );
-    my $expected_results = $case->{expected_results};
-    my @keys             = keys %$expected_results;
+    my $results_all = $RUN->( $case->{input} );
     $repl->debug( 0 ) if $case->{debug};
 
-    # Update results.
+    # Update the results.
     my $nocolor = $case->{nocolor};
     if ( $nocolor and @$nocolor ) {
         for my $key ( @$nocolor ) {
@@ -409,6 +414,8 @@ for my $case ( @cases ) {
 
     # Limit results to expected_results.
     my %results;
+    my $expected_results = $case->{expected_results};
+    my @keys             = keys %$expected_results;
     @results{@keys} = @$results_all{@keys};
 
     # Compare.
@@ -418,19 +425,14 @@ for my $case ( @cases ) {
     if ( not $success or $case->{debug} ) {
         say "";
         say "GOT:";
-        p $results_all, "--maxdepth=0";
+        say explain $results_all;
 
         say "";
         say "EXPECT:";
-        p $expected_results, "--maxdepth=0";
+        say explain $expected_results;
 
         last;
     }
 }
 
-# TODO: Remove later.
-# Explicitly stop the debugger.
-# Will write history to a file.
-# eval { $repl->_exit( "test" ) };
-
-done_testing( 23 );
+done_testing( 22 );
