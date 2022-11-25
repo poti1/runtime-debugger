@@ -1,19 +1,59 @@
 Revision history for Runtime-Debugger
 
+====
+0.07
+====
+
+2022-11-24
+Updated pod typos.
+Updated README.
+Updated Changes format.
+
+====
 0.06
-        2022-11-24 - Moveds commands to a function.
-        2022-11-24 - Fixed minor bugs (like h<ENTER>).
+====
+
+2022-11-24
+Moveds commands to a function.
+Fixed minor bugs (like h<ENTER>).
+
+====
 0.05
-        2022-11-22 - Improved autocompletion (much smarter).
-        2022-11-22 - Performance Improvement by caching lexicals at the start.
+====
+
+2022-11-22
+Improved autocompletion (much smarter).
+Performance Improvement by caching lexicals at the start.
+
+====
 0.04
-        2022-11-21 - Added commands: help, history.
+====
+
+2022-11-21
+Added commands: help, history.
+
+====
 0.03
-        2022-11-20 - Added maxdepth option when printing.
-        2022-11-20 - Displaying message now on error.
+====
+
+2022-11-20
+Added maxdepth option when printing.
+Displaying message now on error.
+
+====
 0.02
-        2022-11-20 - Loading and saving history of commands.
-        2022-11-19 - Added lexical variable tab completion.
-0.01    2022-11-18
-        First version, released on an unsuspecting world.
+====
+
+2022-11-20
+Loading and saving history of commands.
+
+2022-11-19
+Added lexical variable tab completion.
+
+====
+0.01
+====
+
+2022-11-18
+First version, released on an unsuspecting world.
 

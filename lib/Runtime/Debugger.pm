@@ -31,7 +31,7 @@ use feature           qw( say state );
 use parent            qw( Exporter );
 use subs              qw( p uniq );
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our @EXPORT  = qw( run h p );
 
 =head1 NAME
@@ -67,11 +67,13 @@ liked to pause inside the test and see whats going on without
 having to keep rerunning the whole test over and over.
 
 This module basically drops in a read,evaludate,print loop (REPL)
-whereever you need like so:
+wherever you need like so:
 
     use Runtime::Debugger;
     eval run;                # Not sure how to avoid using eval here while
-                             # also being able to keep the lexical scope.
+                             # keeping access to the top level lexical scope.
+                             # (Maybe through abuse of PadWalker and modifying
+                             # input dynamically.)
                              # Any ideas ? :)
 
 Press tab to autocomplete any lexical variables in scope (where "eval run" is found).
@@ -88,9 +90,9 @@ while I have not yet found a way to run "eval" with a higher scope of lexicals.
 
 You can make global variables though if:
 
-- By default ($var=123)
-- Using our (our $var=123)
-- Given the full path ($My::var = 123)
+ - By default ($var=123)
+ - Using our (our $var=123)
+ - Given the full path ($My::var = 123)
 
 =head1 SUBROUTINES/METHODS
 
@@ -306,10 +308,11 @@ sub _complete_vars {
 Returns the possible matches:
 
 Input:
- words   => ["cat", "cake", "bat", "bake"],
- partial => "c",            # Default: ""  - What you typed so far.
- prepend => "Class>",       # Default: ""  - prepend to each possiblity.
- nospace => 0,              # Default: "0" - will not append a space after a completion.
+
+ words   => ARRAYREF, # What to look for.
+ partial => STRING,   # Default: ""  - What you typed so far.
+ prepend => "STRING", # Default: ""  - prepend to each possiblity.
+ nospace => 0,        # Default: "0" - will not append a space after a completion.
 
 =cut
 
@@ -609,13 +612,7 @@ sub p {
     print $d->Dump;
 }
 
-# Unique
-
-=head2 uniq
-
-Return a list of uniq values.
-
-=cut
+# List Utils.
 
 sub uniq (@) {
     my %h;
@@ -687,7 +684,7 @@ Enable this environmental variable to show debugging information:
 Great extendable module!
 
 Unfortunately, I did not find a way to get the lexical variables
-in a scope. (maybe missed a plugin?!)
+in a scope. (maybe I missed a plugin?!)
 
 =head2 L<https://metacpan.org/pod/Reply>
 
@@ -699,7 +696,7 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >> E<0x1f42a>E<0x1f977>
 
 =head1 BUGS
 
-- L<no new lexicals|/=head2 New Variables>
+- L<no new lexicals|/New Variables>
 
 Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
@@ -713,7 +710,7 @@ You can find documentation for this module with the perldoc command.
 
 You can also look for information at:
 
-L<https://metacpan.org/Runtime::Debugger>
+L<https://metacpan.org/pod/Runtime::Debugger>
 L<https://github.com/poti1/runtime-debugger>
 
 
