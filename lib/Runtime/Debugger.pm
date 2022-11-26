@@ -31,14 +31,14 @@ use feature           qw( say state );
 use parent            qw( Exporter );
 use subs              qw( p uniq );
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 our @EXPORT  = qw( run p );
 
 =head1 NAME
 
 Runtime::Debugger - Easy to use REPL with existing lexicals support.
 
-(empahsis on "existing" since I have not yet found this support in others modules).
+(emphasis on "existing" since I have not yet found this support in others modules).
 
 =head1 SYNOPSIS
 
