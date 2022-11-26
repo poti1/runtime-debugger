@@ -238,7 +238,7 @@ sub _complete_empty {
     $self->_dump_args( @_ ) if $self->debug;
 
     $self->_match(
-        words   => $self->{commands_and_variables},
+        words   => $self->{commands_and_vars_all},
         partial => $text,
     );
 }
@@ -424,8 +424,8 @@ sub _setup_vars {
 
     my @commands = $self->_define_commands;
 
-    $self->{commands}               = \@commands;
-    $self->{commands_and_variables} = [ sort( @commands, @vars_all ) ];
+    $self->{commands}              = \@commands;
+    $self->{commands_and_vars_all} = [ sort( @commands, @vars_all ) ];
 
     # Separate variables by types.
     for ( @vars_all ) {
@@ -444,6 +444,12 @@ sub _setup_vars {
                 }
                 elsif ( ref( $$ref ) eq "CODE" ) {
                     push @{ $self->{vars_code} }, $_;
+                }
+                elsif ( ref( $$ref ) eq "HASH" ) {
+                    push @{ $self->{vars_hashref} }, $_;
+                }
+                elsif ( ref( $$ref ) eq "ARRAY" ) {
+                    push @{ $self->{vars_arrayref} }, $_;
                 }
                 else {
                     push @{ $self->{vars_ref_else} }, $_;
@@ -470,7 +476,10 @@ sub _setup_vars {
 sub _step {
     my ( $self ) = @_;
 
-    $self->_setup_vars if not $self->{vars_all};
+    if ( not $self->{vars_all} ) {
+        $self->_setup_vars;
+        $self->help;    # Show help when first loading the debugger.
+    }
 
     my $input = $self->term->readline( "perl>" ) // '';
     say "input_after_readline=[$input]" if $self->debug;
