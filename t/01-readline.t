@@ -201,7 +201,7 @@ sub _get_expected_vars {
             '$repl',        '$completion_return',
             '$RUN'
         ],
-        vars_ref_else => undef,
+        vars_ref_else => [],
         vars_scalar   => [
             '$our_str',      '$our_obj',
             '$our_hashref',  '$our_coderef',
