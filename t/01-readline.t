@@ -297,10 +297,10 @@ sub _test_repl_vars {
 
         return {
             stdin  => $stdin,
-            comp   => $completion_return,         # All recursive completions.
+            comp   => $completion_return,          # All recursive completions.
             line   => $step_return,
             eval   => $eval_return,
-            stdout => [ split /\n/, $stdout ],    # Much easier to debug later.
+            stdout => [ split /\n/, $stdout, -1 ], # Much easier to debug later.
         };
     };
 }
@@ -320,7 +320,6 @@ my $help_stdout = [
     ' hist [N=20] - Show last N commands.',
     ' p DATA [#N] - Prety print data (with optional depth),',
     ' q           - Quit debugger.',
-    '',
     ''
 ];
 

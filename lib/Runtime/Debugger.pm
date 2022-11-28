@@ -596,13 +596,12 @@ sub _define_help {
  hist [N=20] - Show last N commands.
  p DATA [#N] - Prety print data (with optional depth),
  q           - Quit debugger.
-
 HELP
 }
 
 sub _color_help {
     my ( $self, $string ) = @_;
-    my @lines = split /\n/, $string;
+    my @lines = split /\n/, $string, -1;
 
     for ( @lines ) {
 
@@ -634,7 +633,7 @@ sub _color_help {
 
     }
 
-    $string = join "\n", @lines, "";
+    $string = join "\n", @lines;
 
     $string;
 }
