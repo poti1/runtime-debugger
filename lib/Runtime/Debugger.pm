@@ -31,7 +31,7 @@ use feature           qw( say state );
 use parent            qw( Exporter );
 use subs              qw( p uniq );
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 our @EXPORT  = qw( run p );
 
 =head1 NAME
