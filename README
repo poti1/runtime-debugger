@@ -1,0 +1,270 @@
+LOGO
+     ____              _   _
+    |  _ \ _   _ _ __ | |_(_)_ __ ___   ___
+    | |_) | | | | '_ \| __| | '_ ` _ \ / _ \
+    |  _ <| |_| | | | | |_| | | | | | |  __/
+    |_| \_\\__,_|_| |_|\__|_|_| |_| |_|\___|
+
+     ____       _
+    |  _ \  ___| |__  _   _  __ _  __ _  ___ _ __
+    | | | |/ _ \ '_ \| | | |/ _` |/ _` |/ _ \ '__|
+    | |_| |  __/ |_) | |_| | (_| | (_| |  __/ |
+    |____/ \___|_.__/ \__,_|\__, |\__, |\___|_|
+                            |___/ |___/
+
+NAME
+    Runtime::Debugger - Easy to use REPL with existing lexicals support.
+
+    (emphasis on "existing" since I have not yet found this support in
+    others modules).
+
+SYNOPSIS
+    Start the debugger:
+
+        perl -MRuntime::Debugger -E 'eval run'
+
+    Same, but with some variables to play with:
+
+        perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
+
+DESCRIPTION
+    "What? Another debugger? What about ... ?"
+
+  perl5db.pl
+    The standard perl debugger ("perl5db.pl") is a powerful tool.
+
+    Using "per5db.pl", one would normally be able to do this:
+
+        # Insert a breakpoint in your code:
+        $DB::single = 1;
+
+        # Then run the perl debugger to navigate there quickly:
+        PERLDBOPT='Nonstop' perl -d my_script
+
+    If that works for you, then dont' bother with this module! (joke. still
+    try it.)
+
+  Devel::REPL
+    This is a great and extendable module!
+
+    Unfortunately, I did not find a way to get the lexical variables in a
+    scope. (maybe I missed a plugin?!)
+
+    Example:
+
+     perl -MDevel::REPL -E '
+         my  $my_var  = 111;                # I want to access this
+         our $our_var = 222;                # and this.
+         my $repl = Devel::REPL->new;
+         $repl->load_plugin($_) for qw(
+             History
+             LexEnv
+             DDS
+             Colors
+             Completion
+             CompletionDriver::INC
+             CompletionDriver::LexEnv
+             CompletionDriver::Keywords
+             CompletionDriver::Methods
+         );
+         $repl->run;
+     '
+
+    Sample Output:
+
+     $ print $my_var
+     Compile error: Global symbol "$my_var" requires explicit package name ...
+ 
+     $ print $our_var
+     Compile error: Global symbol "$our_var" requires explicit package name ...
+
+  Devel::REPL
+    This module also looked nice, but same issue.
+
+    Example:
+
+        perl -MReply -E '
+            my $var=111;
+            Reply->new->run;
+        '
+
+    Sample Output:
+
+     > print $var
+     1
+     > my $var2 = 222
+     222
+     > print $var2
+     1
+
+  Dilemma
+    I have this scenario:
+
+     - A perl script gets executed.
+     - The script calls a support module.
+     - The module reads a test file.
+     - The module string evals the string contents of the test file.
+     - The test takes possibly minutes to run (Selenium).
+     - The test is failing.
+     - Not sure what is failing.
+
+    Normal workflow would be:
+
+     - Step 1: Apply a fix.
+     - Step 2: Run the test.
+     - Step 3: Wait ... wait ... wait.
+     - Step 4: Go to step 1 if test still fails.
+
+  Solution
+    This module basically inserts a read, evaluate, print loop (REPL)
+    wherever you need it.
+
+        use Runtime::Debugger;
+        eval run;
+
+  Tab Completion
+    This module has rich tab completion support:
+
+     - Press TAB with no input to view commands and available variables in the current scope.
+     - Press TAB after an arrow ("->") to auto append either a "{" or "[" or "(".
+        This depends on the type of variable before it.
+     - Press TAB after a hash (or hash object) to list available keys. 
+     - Press TAB anywhere else to list variables.
+
+  History
+    All commands run in the debugger are saved locally and loaded next time
+    the module is loaded.
+
+  Data::Dumper
+    You can use "p" as a print command which can show a simple or complex
+    data structure.
+
+  Ideas
+    Not sure how to avoid using eval here while keeping access to the top
+    level lexical scope.
+
+    (Maybe through abuse of PadWalker and modifying input dynamically.)
+
+    Any ideas ? :)
+
+  New Variables
+    Currently it is not possible to create new lexicals (my) variables.
+
+    I have not yet found a way to run "eval" with a higher scope of
+    lexicals. (perhaps there is another way?)
+
+    You can make global variables though if:
+
+     - By default ($var=123)
+     - Using our (our $var=123)
+     - Given the full path ($My::var = 123)
+
+SUBROUTINES/METHODS
+  run
+    Runs the REPL (dont forget eval!)
+
+     eval run
+
+    Sets $@ to the exit reason like 'INT' (Control-C) or 'q' (Normal
+    exit/quit).
+
+  _match
+    Returns the possible matches:
+
+    Input:
+
+     words   => ARRAYREF, # What to look for.
+     partial => STRING,   # Default: ""  - What you typed so far.
+     prepend => "STRING", # Default: ""  - prepend to each possiblity.
+     nospace => 0,        # Default: "0" - will not append a space after a completion.
+
+  help
+    Show help section.
+
+  hist
+    Show history of commands.
+
+    By default will show 20 commands:
+
+     hist
+
+    Same thing:
+
+     hist 20
+
+    Can show more:
+
+     hist 50
+
+  p
+    Data::Dumper::Dump anything.
+
+     p 123
+     p [1, 2, 3]
+
+    Can adjust the maxdepth (default is 1) to see with: "#Number".
+
+     p { a => [1, 2, 3] } #1
+
+    Output:
+
+     {
+       'a' => 'ARRAY(0x55fd914a3d80)'
+     }
+
+    Set maxdepth to '0' to show all nested structures.
+
+  attr
+    Internal use.
+
+  debug
+    Internal use.
+
+  term
+    Internal use.
+
+ENVIRONMENT
+    Install required library:
+
+     sudo apt install libreadline-dev
+
+    Enable this environmental variable to show debugging information:
+
+     RUNTIME_DEBUGGER_DEBUG=1
+
+SEE ALSO
+  <https://perldoc.perl.org/perldebug>
+    Why not perl debugger?
+
+  <https://metacpan.org/pod/Devel::REPL>
+    Why not Devel::REPL?
+
+  <https://metacpan.org/pod/Reply>
+    Why not Reply?
+
+AUTHOR
+    Tim Potapov, "<tim.potapov[AT]gmail.com>" 🐪🥷
+
+BUGS
+    - no new lexicals
+
+    Please report any (other) bugs or feature requests to
+    <https://github.com/poti1/runtime-debugger/issues>.
+
+SUPPORT
+    You can find documentation for this module with the perldoc command.
+
+        perldoc Runtime::Debugger
+
+    You can also look for information at:
+
+    <https://metacpan.org/pod/Runtime::Debugger>
+    <https://github.com/poti1/runtime-debugger>
+
+LICENSE AND COPYRIGHT
+    This software is Copyright (c) 2022 by Tim Potapov.
+
+    This is free software, licensed under:
+
+      The Artistic License 2.0 (GPL Compatible)
+
