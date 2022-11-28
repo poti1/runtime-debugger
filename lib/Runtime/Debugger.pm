@@ -69,6 +69,61 @@ Using C<per5db.pl>, one would normally be able to do this:
 If that works for you, then dont' bother with this module!
 (joke. still try it.)
 
+=head2 Devel::REPL
+
+This is a great and extendable module!
+
+Unfortunately, I did not find a way to get the lexical variables
+in a scope. (maybe I missed a plugin?!)
+
+Example:
+
+ perl -MDevel::REPL -E '
+     my  $my_var  = 111;                # I want to access this
+     our $our_var = 222;                # and this.
+     my $repl = Devel::REPL->new;
+     $repl->load_plugin($_) for qw(
+         History
+         LexEnv
+         DDS
+         Colors
+         Completion
+         CompletionDriver::INC
+         CompletionDriver::LexEnv
+         CompletionDriver::Keywords
+         CompletionDriver::Methods
+     );
+     $repl->run;
+ '
+
+Sample Output:
+
+ $ print $my_var
+ Compile error: Global symbol "$my_var" requires explicit package name ...
+ 
+ $ print $our_var
+ Compile error: Global symbol "$our_var" requires explicit package name ...
+
+=head2 Devel::REPL
+
+This module also looked nice, but same issue.
+
+Example:
+
+    perl -MReply -E '
+        my $var=111;
+        Reply->new->run;
+    '
+
+Sample Output:
+
+ > print $var
+ 1
+ > my $var2 = 222
+ 222
+ > print $var2
+ 1
+
 =head2 Dilemma
 
 I have this scenario:
@@ -86,7 +141,7 @@ Normal workflow would be:
  - Step 1: Apply a fix.
  - Step 2: Run the test.
  - Step 3: Wait ... wait ... wait.
- - Step 4: Goto Step 1 if test fails.
+ - Step 4: Go to step 1 if test still fails.
 
 =head2 Solution
 
@@ -98,20 +153,22 @@ wherever you need it.
 
 =head2 Tab Completion
 
-The module support rich tab completion support:
+This module has rich tab completion support:
 
  - Press TAB with no input to view commands and available variables in the current scope.
- -
+ - Press TAB after an arrow ("->") to auto append either a "{" or "[" or "(".
+    This depends on the type of variable before it.
+ - Press TAB after a hash (or hash object) to list available keys. 
+ - Press TAB anywhere else to list variables.
 
-TODO
+=head2 History
 
-Press tab to autocomplete any lexical variables in scope (where "eval run" is found).
-
-Saves history locally.
-
-Can use 'p' to pretty print a variable or structure.
+All commands run in the debugger are saved locally and loaded next time the module is loaded.
 
 
+=head2 Data::Dumper
+
+You can use "p" as a print command which can show a simple or complex data structure.
 
 =head2 Ideas
 
@@ -123,8 +180,9 @@ Any ideas ? :)
 
 =head2 New Variables
 
-Currently its not possible to create any new lexicals variables
-while I have not yet found a way to run "eval" with a higher scope of lexicals.
+Currently it is not possible to create new lexicals (my) variables.
+
+I have not yet found a way to run "eval" with a higher scope of lexicals.
 (perhaps there is another way?)
 
 You can make global variables though if:
@@ -729,16 +787,17 @@ Enable this environmental variable to show debugging information:
 
 =head1 SEE ALSO
 
+=head2 L<https://perldoc.perl.org/perldebug>
+
+L<Why not perl debugger?|/perl5db.pl>
+
 =head2 L<https://metacpan.org/pod/Devel::REPL>
 
-Great extendable module!
-
-Unfortunately, I did not find a way to get the lexical variables
-in a scope. (maybe I missed a plugin?!)
+L<Why not Devel::REPL?|/Devel::REPL>
 
 =head2 L<https://metacpan.org/pod/Reply>
 
-This module also looked nice, but same issue.
+L<Why not Reply?|/Reply>
 
 =head1 AUTHOR
 

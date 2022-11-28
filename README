@@ -13,7 +13,7 @@ Runtime-Debugger
 |____/ \___|_.__/ \__,_|\__, |\__, |\___|_|
                         |___/ |___/
 
-Runtime::Debugger - Easy to use REPL with existing lexicals support.
+`Runtime::Debugger` - Easy to use REPL with `existing` lexicals support.
 
 (emphasis on "existing" since I have not yet found this support in others modules).
 
