@@ -420,10 +420,15 @@ sub _match {
     my %parms = @_;
     $self->_dump_args( @_ ) if $self->debug;
 
+    # completion_word does not automationally get reset per call.
+    # completion_suppress_append gets reset perl call.
+    # attempted_completion_over gets reset perl call.
     $parms{partial} //= "";
     $parms{prepend} //= "";
     $self->attr->{completion_word}            = $parms{words};
     $self->attr->{completion_suppress_append} = 1 if $parms{nospace};
+    $self->attr->{attempted_completion_over} =
+      1;    # Will not use filename completion at all.
 
     map { "$parms{prepend}$_" }
       $self->term->completion_matches( $parms{partial},
@@ -527,6 +532,23 @@ sub _setup_vars {
             push @{ $self->{vars_else} }, $_;
         }
     }
+
+    # Make sure above "vars_*" are all defined:
+    my @vars = qw(
+      vars_scalar
+      vars_string
+      vars_ref
+      vars_obj
+      vars_code
+      vars_hashref
+      vars_arrayref
+      vars_ref_else
+      vars_scalar_else
+      vars_array
+      vars_hash
+      vars_else
+    );
+    $self->{$_} //= [] for @vars;
 
     $self;
 }
