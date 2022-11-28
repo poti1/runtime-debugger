@@ -31,7 +31,7 @@ use feature           qw( say state );
 use parent            qw( Exporter );
 use subs              qw( p uniq );
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our @EXPORT  = qw( run p );
 
 =head1 NAME
@@ -576,12 +576,18 @@ Show help section.
 
 sub help {
     my ( $self ) = @_;
+
+    my $help = $self->_define_help;
+
+    say $self->_color_help( $help );
+}
+
+sub _define_help {
+    my ( $self ) = @_;
     my $version  = $self->VERSION;
     my $class    = ref $self;
 
-    # TODO: Make colorful.
-
-    say colored( <<"HELP", "YELLOW" );
+    <<"HELP";
 
  $class $version
 
@@ -592,6 +598,45 @@ sub help {
  q           - Quit debugger.
 
 HELP
+}
+
+sub _color_help {
+    my ( $self, $string ) = @_;
+    my @lines = split /\n/, $string;
+
+    for ( @lines ) {
+
+        # Module version line.
+        if ( /::/ ) {
+            s/ ^ \s+ \K (\S+) \s+ (\S+) $ /
+                colored($1,"YELLOW") . " " . colored($2, "GREEN")
+            /xme;
+        }
+
+        # Command and description line.
+        elsif ( / - / ) {
+            my ( $command_plus, $desc ) = split / - /;
+            my ( $commands, $options ) = split "", $command_plus, 2;
+
+            $command_plus =~ s/
+                ^ \s+
+                    \K
+                    (\S+)           # Commmand.
+                    (.+)            # Options.
+                $
+                /
+                    colored("$1", "YELLOW")
+                  . colored("$2", "GREEN")
+                /xge;
+
+            $_ = join " - ", ( $command_plus, colored( $desc, "DARK" ), );
+        }
+
+    }
+
+    $string = join "\n", @lines, "";
+
+    $string;
 }
 
 # History
