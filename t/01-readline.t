@@ -2,7 +2,7 @@
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 51;
+use Test::More tests => 65;
 use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw(say);
@@ -604,6 +604,56 @@ my @cases = (
         todo => 1,
     },
 
+    # Complete an array with a "$" or "@" sigil
+    {
+        name             => 'Complete array - arrayref "$my_"',
+        input            => '$my_array' . $TAB,
+        expected_results => {
+            comp => ['$my_arrayref'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete array - arrayref "$our_"',
+        input            => '$our_array' . $TAB,
+        expected_results => {
+            comp => ['$my_arrayref'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete array - array "@my_"',
+        input            => '@my_arr' . $TAB,
+        expected_results => {
+            comp => ['@my_array'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete array - array "@our_"',
+        input            => '@our_arr' . $TAB,
+        expected_results => {
+            comp => ['@our_array'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete array - scalar context "$my_array"',
+        input            => '$my_array' . $TAB,
+        expected_results => {
+            comp => [ '$my_array', '$my_arrayref' ],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete array - scalar context "$our_array"',
+        input            => '$our_array' . $TAB,
+        expected_results => {
+            comp => [ '$our_array', '$our_arrayref' ],
+        },
+        todo => 1,
+    },
+
     # Append bracket after arrow.
     {
         name             => 'Scalar Sigil, Arrow - arrayref "$my->"',
@@ -637,6 +687,73 @@ my @cases = (
             comp => $repl->{vars_hash},
 
             # Should include all: %hash
+        },
+        todo => 1,
+    },
+
+
+    # Complete a hash with a "$" or "@" or "%" sigil
+    {
+        name             => 'Complete hash - hashref "$my_"',
+        input            => '$my_hash' . $TAB,
+        expected_results => {
+            comp => ['$my_hashref'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - hashref "$our_"',
+        input            => '$our_hash' . $TAB,
+        expected_results => {
+            comp => ['$my_hashref'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - array "@my_"',
+        input            => '@my_ha' . $TAB,
+        expected_results => {
+            comp => ['@my_hash'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - array "@our_"',
+        input            => '@our_ha' . $TAB,
+        expected_results => {
+            comp => ['@our_hash'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - hash "%my_"',
+        input            => '%my_ha' . $TAB,
+        expected_results => {
+            comp => ['%my_hash'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - hash "%our_"',
+        input            => '%our_ha' . $TAB,
+        expected_results => {
+            comp => ['%our_hash'],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - scalar context "$my_hash"',
+        input            => '$my_hash' . $TAB,
+        expected_results => {
+            comp => [ '$my_hash', '$my_hashref' ],
+        },
+        todo => 1,
+    },
+    {
+        name             => 'Complete hash - scalar context "$our_hash"',
+        input            => '$our_hash' . $TAB,
+        expected_results => {
+            comp => [ '$our_hash', '$our_hashref' ],
         },
         todo => 1,
     },
