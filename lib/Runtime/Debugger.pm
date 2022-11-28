@@ -104,7 +104,7 @@ Sample Output:
  $ print $our_var
  Compile error: Global symbol "$our_var" requires explicit package name ...
 
-=head2 Devel::REPL
+=head2 Reply
 
 This module also looked nice, but same issue.
 
