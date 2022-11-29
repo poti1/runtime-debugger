@@ -11,7 +11,7 @@ package MyTest;
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 65;
+use Test::More tests => 67;
 use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw( say );
@@ -38,7 +38,7 @@ our $our_hashref  = {qw(key11 aa key22 bb)};
 our $our_coderef  = sub { "coderef-our: @_" };
 our $our_obj      = bless { type => "our" }, "MyObj";
 
-# eval run; exit;
+#eval run; exit;
 
 my $INSTR;                # Simulated input string.
 my $COMPLETION_RETURN;    # Possible completions.
@@ -85,24 +85,23 @@ sub _define_expected_vars {
     {
         commands              => [ 'help', 'hist', 'p', 'q' ],
         commands_and_vars_all => [
-            '$INSTR',
-            '$TAB',
-            '$TAB_ALL', '$COMPLETION_RETURN',
-            '$my_array',
-            '$my_arrayref', '$my_coderef',
-            '$my_hash',     '$my_hashref',
-            '$my_obj',      '$my_str',
-            '$our_array',   '$our_arrayref',
-            '$our_coderef', '$our_hash',
-            '$our_hashref', '$our_obj',
-            '$our_str',     '$repl',
-
-            '%my_hash',
-            '%our_hash', '@my_array',
-            '@my_hash',  '@our_array',
-            '@our_hash', 'help',
-            'hist',      'p',
-            'q'
+            '$COMPLETION_RETURN', '$EOL',
+            '$INSTR',             '$_repl',
+            '$case',              '$eval_return',
+            '$my_array',          '$my_arrayref',
+            '$my_coderef',        '$my_hash',
+            '$my_hashref',        '$my_obj',
+            '$my_str',            '$our_array',
+            '$our_arrayref',      '$our_coderef',
+            '$our_hash',          '$our_hashref',
+            '$our_obj',           '$our_str',
+            '$repl',              '$stdin',
+            '$stdout',            '$step_return',
+            '%my_hash',           '%our_hash',
+            '@my_array',          '@my_hash',
+            '@our_array',         '@our_hash',
+            'help',               'hist',
+            'p',                  'q',
         ],
         debug        => 0,
         history_file => "$ENV{HOME}/.runtime_debugger_testmode.info",
@@ -120,78 +119,91 @@ sub _define_expected_vars {
         #     '@our_array' => ['array-our']
         # },
         vars_all => [
-            '$INSTR',
-            '$TAB',
-            '$TAB_ALL', '$COMPLETION_RETURN',
-            '$my_array',
-            '$my_arrayref', '$my_coderef',
-            '$my_hash',     '$my_hashref',
-            '$my_obj',      '$my_str',
-            '$our_array',   '$our_arrayref',
-            '$our_coderef', '$our_hash',
-            '$our_hashref', '$our_obj',
-            '$our_str',     '$repl',
-
-            '%my_hash',
-            '%our_hash', '@my_array',
-            '@my_hash',  '@our_array',
-            '@our_hash'
+            '$COMPLETION_RETURN', '$EOL',
+            '$INSTR',             '$_repl',
+            '$case',              '$eval_return',
+            '$my_array',          '$my_arrayref',
+            '$my_coderef',        '$my_hash',
+            '$my_hashref',        '$my_obj',
+            '$my_str',            '$our_array',
+            '$our_arrayref',      '$our_coderef',
+            '$our_hash',          '$our_hashref',
+            '$our_obj',           '$our_str',
+            '$repl',              '$stdin',
+            '$stdout',            '$step_return',
+            '%my_hash',           '%our_hash',
+            '@my_array',          '@my_hash',
+            '@our_array',         '@our_hash',
+            'help',               'hist',
+            'p',                  'q',
         ],
-        vars_array    => [ '@our_array', '@my_array' ],
-        vars_arrayref => [
-            '$our_arrayref',
-
-            # TODO: fix
-            # '$my_arrayref',
-            '$COMPLETION_RETURN'
+        vars_all => [
+            '$COMPLETION_RETURN', '$EOL',
+            '$INSTR',             '$_repl',
+            '$case',              '$eval_return',
+            '$my_array',          '$my_arrayref',
+            '$my_coderef',        '$my_hash',
+            '$my_hashref',        '$my_obj',
+            '$my_str',            '$our_array',
+            '$our_arrayref',      '$our_coderef',
+            '$our_hash',          '$our_hashref',
+            '$our_obj',           '$our_str',
+            '$repl',              '$stdin',
+            '$stdout',            '$step_return',
+            '%my_hash',           '%our_hash',
+            '@my_array',          '@my_hash',
+            '@our_array',         '@our_hash'
         ],
-        vars_code   => [ '$our_coderef', ],
+        vars_array    => [ '@my_array', '@my_hash', '@our_array', '@our_hash' ],
+        vars_arrayref =>
+          [ '$COMPLETION_RETURN', '$my_arrayref', '$our_arrayref' ],
+        vars_code   => [ '$my_coderef', '$our_coderef' ],
         vars_global => [
             '$our_arrayref', '$our_coderef', '$our_hashref', '$our_obj',
             '$our_str',      '%our_hash',    '@our_array'
         ],
-        vars_hash    => [ '%our_hash', '%my_hash' ],
-        vars_hashref => [
-            '$our_hashref',
-
-            # '$my_hashref'
-        ],
+        vars_hash    => [ '%my_hash', '%our_hash' ],
+        vars_hashref => [ '$case',    '$my_hashref', '$our_hashref' ],
         vars_lexical => [
-            '$INSTR',
-            '$TAB',
-            '$TAB_ALL', '$COMPLETION_RETURN',
-            '$my_arrayref',
-            '$my_coderef', '$my_hashref',
-            '$my_obj',     '$my_str',
-            '$repl',
-
-            '%my_hash', '@my_array'
+            '$COMPLETION_RETURN', '$EOL',
+            '$INSTR',             '$_repl',
+            '$case',              '$eval_return',
+            '$my_arrayref',       '$my_coderef',
+            '$my_hashref',        '$my_obj',
+            '$my_str',            '$repl',
+            '$stdin',             '$stdout',
+            '$step_return',       '%my_hash',
+            '@my_array'
         ],
-        vars_obj => [ '$our_obj', '$repl' ],
-        vars_ref => [
-            '$our_obj',     '$our_hashref',
-            '$our_coderef', '$our_arrayref',
-            '$repl',        '$COMPLETION_RETURN',
 
+
+        vars_obj => [ '$_repl', '$my_obj', '$our_obj', '$repl' ],
+        vars_ref => [
+            '$COMPLETION_RETURN', '$_repl',
+            '$case',              '$my_arrayref',
+            '$my_coderef',        '$my_hashref',
+            '$my_obj',            '$our_arrayref',
+            '$our_coderef',       '$our_hashref',
+            '$our_obj',           '$repl'
         ],
         vars_ref_else => [],
         vars_scalar   => [
-            '$our_str',     '$our_obj',
-            '$our_hashref', '$our_coderef',
-            '$our_arrayref',
-
-            '$repl',       '$my_str',
-            '$my_obj',     '$my_hashref',
-            '$my_coderef', '$my_arrayref',
-            '$COMPLETION_RETURN',
-            '$TAB_ALL', '$TAB',
-            '$INSTR',
-
+            '$COMPLETION_RETURN', '$EOL',
+            '$INSTR',             '$_repl',
+            '$case',              '$eval_return',
+            '$my_array',          '$my_arrayref',
+            '$my_coderef',        '$my_hash',
+            '$my_hashref',        '$my_obj',
+            '$my_str',            '$our_array',
+            '$our_arrayref',      '$our_coderef',
+            '$our_hash',          '$our_hashref',
+            '$our_obj',           '$our_str',
+            '$repl',              '$stdin',
+            '$stdout',            '$step_return'
         ],
         vars_string => [
-            '$our_str',    '$my_str',      '$my_obj',  '$my_hashref',
-            '$my_coderef', '$my_arrayref', '$TAB_ALL', '$TAB',
-            '$INSTR',
+            '$EOL',     '$INSTR', '$eval_return', '$my_str',
+            '$our_str', '$stdin', '$stdout',      '$step_return'
         ],
     };
 }
@@ -373,43 +385,30 @@ sub _define_test_cases {
                 comp   => $_repl->{vars_scalar},
                 stdout => [],
             },
-            todo => 1,    # Scalar should include $hash and $array ?!
         },
         {
             name             => 'Print TAB complete: p $o ',
             input            => 'p $o' . $TAB,
             expected_results => {
-                'comp' => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
                 stdout => [],
             },
-            todo => 1,    # Scalar should include $hash and $array ?!
-                          # debug => 1,
         },
         {
             name  => 'Print TAB complete: p $o<TAB>_ ',
             input => 'p $o' . $TAB . '_',    # Does not expand after tab.
             expected_results => {
-                'comp' => [
-                    '$our_str',     '$our_obj',
-                    '$our_hashref', '$our_coderef',
-                    '$our_arrayref'
-                ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
                 stdout => [],
             },
-            todo => 1,    # Scalar should include $hash and $array ?!
         },
         {
             name             => 'Print TAB complete: p $<TAB>_str ',
             input            => 'p $o' . $TAB . '_str',
             expected_results => {
-                'comp' => [
-                    '$our_str',     '$our_obj',
-                    '$our_hashref', '$our_coderef',
-                    '$our_arrayref'
-                ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
                 stdout => [],
             },
-            todo => 1,    # Scalar should include $hash and $array ?!
         },
 
 
@@ -419,47 +418,107 @@ sub _define_test_cases {
 
         # All scalars.
         {
-            name             => 'Scalar sigil - all scalars"',
+            name             => 'Complete scalar - "$"',
             input            => '$' . $TAB,
             expected_results => {
                 comp => $_repl->{vars_scalar},
             },
-            todo => 1,    # Scalar should include $hash and $array ?!
         },
 
-        # Arrow - Code reference.
+
+        #
+        # Coderefs.
+        #
+
+        # TAB after coderef arrow.
         {
-            name             => 'Arrow - coderef "$my->"',
+            name             => 'TAB after coderef arrow "$my_coderef->"',
             input            => '$my_coderef->' . $TAB,
             expected_results => {
                 line   => '$my_coderef->(',
                 stdout => [],
             },
-            todo => 1,    # Only in the test it fails.
         },
         {
-            name             => 'Arrow - coderef "$our->"',
+            name             => 'TAB after coderef arrow "$our_coderef->"',
             input            => '$our_coderef->' . $TAB,
             expected_results => {
                 line   => '$our_coderef->(',
                 stdout => [],
             },
         },
-
-        # Arrow - Method call.
         {
-            name  => 'Scalar Sigil, Arrow - method "$my->(" before closing ")"',
-            input => '$my_coderef->' . $TAB . ')',
+            name =>
+              'TAB after coderef arrow - "$my_coderef->" before closing ")"',
+            input            => '$my_coderef->' . $TAB . ')',
             expected_results => {
                 line   => '$my_coderef->()',
                 stdout => [],
             },
         },
         {
-            name => 'Scalar Sigil, Arrow - method "$our->(" before closing ")"',
+            name =>
+              'TAB after coderef arrow - "$our_coderef->" before closing ")"',
             input            => '$our_coderef->' . $TAB . ')',
             expected_results => {
                 line   => '$our_coderef->()',
+                stdout => [],
+            },
+        },
+
+
+        #
+        # Methods.
+        #
+
+        # TAB after method call arrow.
+        {
+            name             => 'TAB after method call arrow - "$my_obj->"',
+            input            => '$my_obj->' . $TAB,
+            expected_results => {
+                comp => [
+                    sort map { '$my_obj->' . $_ } @{ $_repl->{vars_string} },
+                    qw( Func1 Func2 { )
+                ],
+                line   => '$my_obj->',
+                stdout => [],
+            },
+        },
+        {
+            name             => 'TAB after method call arrow - "$our_obj->"',
+            input            => '$our_obj->' . $TAB,
+            expected_results => {
+                comp => [
+                    sort map { '$our_obj->' . $_ } @{ $_repl->{vars_string} },
+                    qw( Func1 Func2 { )
+                ],
+                line   => '$our_obj->',
+                stdout => [],
+            },
+        },
+        {
+            name =>
+              'TAB after method call arrow - "$my_obj->" before closing ")"',
+            input            => '$my_obj->' . $TAB . ')',
+            expected_results => {
+                comp => [
+                    sort map { '$my_obj->' . $_ } @{ $_repl->{vars_string} },
+                    qw( Func1 Func2 { )
+                ],
+                line   => '$my_obj->)',
+                stdout => [],
+            },
+        },
+        {
+            name =>
+              'TAB after method call arrow - "$our_obj->" before closing ")"',
+            input            => '$our_obj->' . $TAB . ')',
+            expected_results => {
+                comp => [
+                    sort map { '$our_obj->' . $_ } @{ $_repl->{vars_string} },
+                    qw( Func1 Func2 { )
+                ],
+                line   => '$our_obj->)',
                 stdout => [],
             },
         },
@@ -471,61 +530,46 @@ sub _define_test_cases {
 
         # All arrays.
         {
-            name             => 'Array sigil - all arrays"',
+            name             => 'Complete array - "@""',
             input            => '@' . $TAB,
             expected_results => {
                 comp => $_repl->{vars_array},
             },
-            todo => 1,    # Array should include @hash ?!
         },
 
         # Complete an array with a "$" or "@" sigil
         {
-            name             => 'Complete array - arrayref "$my_"',
+            name             => 'Complete array - "$my_array"',
             input            => '$my_array' . $TAB,
             expected_results => {
                 comp => [ '$my_array', '$my_arrayref' ],
             },
         },
         {
-            name             => 'Complete array - arrayref "$our_"',
+            name             => 'Complete array - "$our_array"',
             input            => '$our_array' . $TAB,
             expected_results => {
                 comp => [ '$our_array', '$our_arrayref' ],
             },
         },
         {
-            name             => 'Complete array - array "@my_"',
+            name             => 'Complete array - "@my_arr"',
             input            => '@my_arr' . $TAB,
             expected_results => {
                 line => '@my_array',
             },
         },
         {
-            name             => 'Complete array - array "@our_"',
+            name             => 'Complete array - "@our_arr"',
             input            => '@our_arr' . $TAB,
             expected_results => {
                 line => '@our_array',
             },
         },
-        {
-            name             => 'Complete array - scalar context "$my_array"',
-            input            => '$my_array' . $TAB,
-            expected_results => {
-                comp => [ '$my_array', '$my_arrayref' ],
-            },
-        },
-        {
-            name             => 'Complete array - scalar context "$our_array"',
-            input            => '$our_array' . $TAB,
-            expected_results => {
-                comp => [ '$our_array', '$our_arrayref' ],
-            },
-        },
 
-        # Append bracket after arrow.
+        # TAB after arrayref arrow.
         {
-            name             => 'Scalar Sigil, Arrow - arrayref "$my->"',
+            name             => 'TAB after arrayref arrow "$my_arrayref->"',
             input            => '$my_arrayref->' . $TAB,
             expected_results => {
                 line   => '$my_arrayref->[',
@@ -533,7 +577,7 @@ sub _define_test_cases {
             },
         },
         {
-            name             => 'Scalar Sigil, Arrow - arrayref "$our->"',
+            name             => 'TAB after arrayref arrow "$our_arrayref->"',
             input            => '$our_arrayref->' . $TAB,
             expected_results => {
                 line   => '$our_arrayref->[',
@@ -541,10 +585,10 @@ sub _define_test_cases {
             },
         },
 
-        # TAB after arrow and bracket.
+        # TAB after arrayref arrow and bracket.
         {
-            name             => 'Scalar Sigil, Arrow - arrayref "$my->["',
-            input            => '$my_arrayref->[' . $TAB,
+            name  => 'TAB after arrayref arrow and bracket - "$my_arrayref->["',
+            input => '$my_arrayref->[' . $TAB,
             expected_results => {
                 comp   => $_repl->{vars_all},
                 line   => '$my_arrayref->[',
@@ -552,7 +596,7 @@ sub _define_test_cases {
             },
         },
         {
-            name             => 'Scalar Sigil, Arrow - arrayref "$our->["',
+            name => 'TAB after arrayref arrow and bracket - "$our_arrayref->["',
             input            => '$our_arrayref->[' . $TAB,
             expected_results => {
                 comp   => $_repl->{vars_all},
@@ -567,7 +611,7 @@ sub _define_test_cases {
 
         # All hashs.
         {
-            name             => 'Hash sigil - all hashs"',
+            name             => 'Complete hash - "%""',
             input            => '%' . $TAB,
             expected_results => {
                 comp => $_repl->{vars_hash},
@@ -576,145 +620,101 @@ sub _define_test_cases {
 
         # Complete a hash with a "$" or "@" or "%" sigil
         {
-            name             => 'Complete hash - hashref "$my_"',
+            name             => 'Complete hash - "$my_hash"',
             input            => '$my_hash' . $TAB,
             expected_results => {
                 comp => [ '$my_hash', '$my_hashref' ],
             },
         },
         {
-            name             => 'Complete hash - hashref "$our_"',
+            name             => 'Complete hash - "$our_hash"',
             input            => '$our_hash' . $TAB,
             expected_results => {
                 comp => [ '$our_hash', '$our_hashref' ],
             },
         },
         {
-            name             => 'Complete hash - array "@my_"',
+            name             => 'Complete hash - "@my_ha"',
             input            => '@my_ha' . $TAB,
             expected_results => {
-                comp => ['@my_hash'],
+                line => '@my_hash',
             },
-            todo => 1,
-
-            # debug => 1,
         },
         {
-            name             => 'Complete hash - array "@our_"',
+            name             => 'Complete hash - "@our_ha"',
             input            => '@our_ha' . $TAB,
             expected_results => {
-                comp => ['@our_hash'],
+                line => '@our_hash',
             },
-            todo => 1,
         },
         {
-            name             => 'Complete hash - hash "%my_"',
+            name             => 'Complete hash - "%my_ha"',
             input            => '%my_ha' . $TAB,
             expected_results => {
                 line => '%my_hash',
             },
         },
         {
-            name             => 'Complete hash - hash "%our_"',
+            name             => 'Complete hash - "%our_ha"',
             input            => '%our_ha' . $TAB,
             expected_results => {
                 line => '%our_hash',
             },
         },
-        {
-            name             => 'Complete hash - scalar context "$my_hash"',
-            input            => '$my_hash' . $TAB,
-            expected_results => {
-                comp => [ '$my_hash', '$my_hashref' ],
-            },
-            todo => 1,
-        },
-        {
-            name             => 'Complete hash - scalar context "$our_hash"',
-            input            => '$our_hash' . $TAB,
-            expected_results => {
-                comp => [ '$our_hash', '$our_hashref' ],
-            },
-            todo => 1,
-        },
 
-        # Append brace after arrow.
+        # TAB after after hashref arrow.
         {
-            name             => 'Scalar Sigil, Arrow - hashref "$my->"',
+            name             => 'TAB after after hashref arrow - "$my->"',
             input            => '$my_hashref->' . $TAB,
             expected_results => {
                 line => '$my_hashref->{',
             },
         },
         {
-            name             => 'Scalar Sigil, Arrow - hashref "$our->"',
+            name             => 'TAB after after hashref arrow - "$our->"',
             input            => '$our_hashref->' . $TAB,
             expected_results => {
                 line => '$our_hashref->{',
             },
         },
 
-        # TAB after arrow and brace.
+        # TAB after hashref arrow and brace.
         {
-            name             => 'Scalar Sigil, Arrow - hashref "$my->{"',
+            name             => 'TAB after hashref arrow and brace - "$my->{"',
             input            => '$my_hashref->{' . $TAB,
             expected_results => {
-                comp   => [ sort qw(key1 key2), @{ $_repl->{vars_string} } ],
-                line   => '$my_hashref->{',
+                comp => [ sort keys %$my_hashref, @{ $_repl->{vars_string} } ],
+                line => '$my_hashref->{',
                 stdout => [],
             },
         },
         {
-            name             => 'Scalar Sigil, Arrow - hashref "$our->{"',
+            name             => 'TAB after hashref arrow and brace - "$our->{"',
             input            => '$our_hashref->{' . $TAB,
             expected_results => {
-                comp   => [ sort qw(key11 key22), @{ $_repl->{vars_string} } ],
-                line   => '$our_hashref->{',
+                comp => [ sort keys %$our_hashref, @{ $_repl->{vars_string} } ],
+                line => '$our_hashref->{',
                 stdout => [],
             },
         },
 
-        # Append key after (optional) arrow, brace.
+        # TAB after hash brace (no arrow).
         {
-            name             => 'Scalar Sigil, Arrow - hash "$my{"',
+            name             => 'TAB after hash brace (no arrow) - "$my{"',
             input            => '$my_hash{' . $TAB,
             expected_results => {
-                comp => [ "key1", "key2" ],
+                comp => [ sort keys %my_hash, @{ $_repl->{vars_string} } ],
                 line => '$my_hash{',
             },
-            todo => 1,
-
-            # debug => 1,
         },
         {
-            name             => 'Scalar Sigil, Arrow - hash "$our{"',
+            name             => 'TAB after hash brace (no arrow) - "$our{"',
             input            => '$our_hash{' . $TAB,
             expected_results => {
-                comp   => [ "key1", "key2" ],
+                comp   => [ sort keys %our_hash, @{ $_repl->{vars_string} } ],
                 line   => '$our_hash{',
                 stdout => [],
             },
-            todo => 1,
-        },
-        {
-            name             => 'Scalar Sigil, Arrow - hashref "$my->{"',
-            input            => '$my_hashref->{' . $TAB,
-            expected_results => {
-                comp   => [ "key1", "key2" ],
-                line   => '$my_hashref->{',
-                stdout => [],
-            },
-            todo => 1,
-        },
-        {
-            name             => 'Scalar Sigil, Arrow - hashref "$our->{"',
-            input            => '$our_hashref->{' . $TAB,
-            expected_results => {
-                comp   => [ "key1", "key2" ],
-                line   => '$our_hashref->{',
-                stdout => [],
-            },
-            todo => 1,
         },
 
     );
@@ -826,16 +826,24 @@ sub _test_repl_vars {
     my $expected = _define_expected_vars( $_repl );
 
     for ( sort keys %$expected ) {
-        is_deeply $_repl->{$_}, $expected->{$_}, "_repl->{$_} is correct"
-          or say explain $_repl->{$_};
+        my $same = is_deeply $_repl->{$_}, $expected->{$_},
+          "_repl->{$_} is correct";
+        if ( not $same ) {
+            say explain "\n$_ => ", $_repl->{$_};
+        }
     }
 }
 
 _run_case( $repl, init_case() );
 
-# _test_repl_vars( $repl );
-
 for my $case ( _define_test_cases( $repl ) ) {
     last if _run_case( $repl, $case );
 }
+
+_test_repl_vars( $repl );
+
+__END__
+
+
+
 

@@ -391,6 +391,7 @@ sub _complete_arrow {
             # push @$methods, "(";    # Access as method or hash refs.
             push @$methods, "{" if reftype( $obj_or_coderef ) eq "HASH";
             push @$methods, @{ $self->{vars_string} };
+            @$methods = uniq sort @$methods;
 
             # push @$methods, $self->{vars_all}; # TODO: Add scalars.
         }

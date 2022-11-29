@@ -9,6 +9,7 @@ Fixed pod typos.
 Fixed some edge case issues.
 Test cases work now with lexical values.
 Improved array and hash completions.
+Finished main tests.
 
 ====
 0.09
