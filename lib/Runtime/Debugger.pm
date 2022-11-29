@@ -22,14 +22,13 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Term::ReadLine;
-use Term::ANSIColor   qw( colored );
-use PadWalker         qw( peek_my  peek_our );
-use Scalar::Util      qw( blessed reftype );
-use Module::Functions qw( get_full_functions );
-use Class::Tiny       qw( term attr debug );
-use feature           qw( say state );
-use parent            qw( Exporter );
-use subs              qw( p uniq );
+use Term::ANSIColor qw( colored );
+use PadWalker       qw( peek_my  peek_our );
+use Scalar::Util    qw( blessed reftype );
+use Class::Tiny     qw( term attr debug );
+use feature         qw( say state );
+use parent          qw( Exporter );
+use subs            qw( p uniq );
 
 our $VERSION = '0.10';
 our @EXPORT  = qw( run p );
@@ -385,7 +384,7 @@ sub _complete_arrow {
 
         my $methods = $self->{methods}{$obj_or_coderef};
         if ( not $methods ) {
-            $methods = [ get_full_functions( ref $obj_or_coderef ) ];
+            $methods = $self->_get_object_functions( $obj_or_coderef );
             $self->{methods}{$obj_or_coderef} = $methods;
 
             # push @$methods, "(";    # Access as method or hash refs.
@@ -437,6 +436,31 @@ sub _complete_arrow {
 
     say "NOT OBJECT or CODEREF: $obj_or_coderef" if $self->debug;
     return;
+}
+
+sub _get_object_functions {
+    my ( $self, $obj ) = @_;
+    my $class = ref $obj;
+    no strict 'refs';
+
+    my @functions = grep {
+        !/ ^
+        (?:
+              BEGIN
+            | UNITCHECK
+            | INIT
+            | CHECK
+            | END
+            | import
+            | AUTOLOAD
+            | DESTROY
+        )
+        $ /x
+      }
+      sort
+      keys %{"${class}::"};
+
+    \@functions;
 }
 
 sub _complete_hash {
