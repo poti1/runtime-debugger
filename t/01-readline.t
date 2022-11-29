@@ -38,8 +38,7 @@ our $our_hashref  = {qw(key11 aa key22 bb)};
 our $our_coderef  = sub { "coderef-our: @_" };
 our $our_obj      = bless { type => "our" }, "MyObj";
 
-# eval run;
-# exit;
+# eval run; exit;
 
 my $INSTR;                # Simulated input string.
 my $COMPLETION_RETURN;    # Possible completions.
@@ -832,13 +831,9 @@ sub _test_repl_vars {
     }
 }
 
-# Main
 _run_case( $repl, init_case() );
 
-# p $repl->{peek_all}, '--maxdepth=2';
-
-# _test_repl_vars($repl);
-# exit;
+# _test_repl_vars( $repl );
 
 for my $case ( _define_test_cases( $repl ) ) {
     last if _run_case( $repl, $case );

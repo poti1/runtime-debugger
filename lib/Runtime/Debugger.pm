@@ -260,6 +260,41 @@ sub _init {
     $self;
 }
 
+sub _step {
+    my ( $self ) = @_;
+
+    if ( not $self->{vars_all} ) {
+        $self->_setup_vars;
+        $self->help;    # Show help when first loading the debugger.
+    }
+
+    my $input = $self->term->readline( "perl>" ) // '';
+    say "input_after_readline=[$input]" if $self->debug;
+
+    # Change '#1' to '--maxdepth=1'
+    if ( $input =~ / ^ p\b /x ) {
+        $input =~ s/
+            \s*
+            \#(\d)     #2 to --maxdepth=2
+            \s*
+        $ /, '--maxdepth=$1'/x;
+    }
+
+    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
+    $input =~ s/ ^
+        (
+              help
+            | hist
+        ) \b
+        (.*)
+    $ /\$repl->$1($2)/x;
+
+    $self->_exit( $input ) if $input eq 'q';
+
+    say "input_after_step=[$input]" if $self->debug;
+    $input;
+}
+
 # Completion
 
 sub _complete {
@@ -485,21 +520,27 @@ sub _define_commands {
 sub _setup_vars {
     my ( $self ) = @_;
 
-    # Get and cache the current variables in the invoking scope.
-    #
-    # Note: this block was originally in _step since the intent
-    # was to be able to see newly added lexicals or globals.
-    # (which does not seem to be possible since the lexical scope
-    # of a new variable would be found to the eval block).
-    #
-    # Although globals can be created, they would appear in the
-    # invoking scope (like "main").
-    #
-    # Moved here to be able to capture the debugger object "$repl".
+    $self->_set_peeks;
+    $self->_split_vars_by_types;
+
+    $self->{commands} = [ $self->_define_commands ];
+    $self->{commands_and_vars_all} =
+      [ @{ $self->{commands} }, @{ $self->{vars_all} } ];
+
+    $self->_normalize_var_defaults;
+
+    $self;
+}
+
+sub _set_peeks {
+    my ( $self ) = @_;
+
+    # Get the current variables in the invoking scope.
     #
     # CAUTION: avoid having the same name for a lexical and global
     # variable since the last variable declared would "win".
-    my $levels       = 2;    # How many levels until at "$repl=" or main.
+
+    my $levels       = 3;    # How many levels until at "$repl=" or main.
     my $peek_my      = peek_my( $levels );
     my $peek_our     = peek_our( $levels );
     my %peek_all     = ( %$peek_our, %$peek_my );
@@ -507,25 +548,30 @@ sub _setup_vars {
     my @vars_global  = keys %$peek_our;
     my @vars_all     = uniq @vars_lexical, @vars_global;
 
-    # Cache variables.
     $self->{peek_my}      = $peek_my;
     $self->{peek_our}     = $peek_our;
     $self->{peek_all}     = \%peek_all;
     $self->{vars_lexical} = \@vars_lexical;
     $self->{vars_global}  = \@vars_global;
+    $self->{vars_all}     = \@vars_all;
+}
+
+sub _split_vars_by_types {
+    my ( $self ) = @_;
+    my @queue = @{ $self->{vars_all} // [] };
 
     # Separate variables by types.
-    my @queue = @vars_all;    # Otherwise would mess with the for loop.
-    my %already_stored;       #
-    my %added_duplicates;     # These are ok to have twice.
+    my %already_stored;
+    my %added_duplicates;    # These are ok to have twice.
+
     while ( local $_ = shift @queue ) {
 
         # Show duplcate variables with same name (probably different sigil).
         if ( $already_stored{$_} ) {
             if ( $self->debug or not $added_duplicates{$_} ) {
                 $self->_show_error(
-"Skipping variable with same name: '$_' (maybe same name, but different sigil?)"
-                );
+                        "Skipping variable with same name: '$_' "
+                      . "(maybe same name, but different sigil?)" );
             }
             next;
         }
@@ -535,7 +581,7 @@ sub _setup_vars {
         if ( / ^ \$ /x ) {
             push @{ $self->{vars_scalar} }, $_;
 
-            my $ref  = $peek_all{$_};
+            my $ref  = $self->{peek_all}{$_};
             my $type = ref( $ref );
             if ( $type eq "SCALAR" ) {
                 push @{ $self->{vars_string} }, $_;
@@ -565,29 +611,28 @@ sub _setup_vars {
         elsif ( / ^ \@ /x ) {
             push @{ $self->{vars_array} }, $_;
 
-            # Allow access via $array[0]
+            # Allow access via @array, $array[0]
             my $var_scalar = '$' . substr( $_, 1 );
-            push @vars_all, $var_scalar;    # Add as a possible completion.
-            push @queue,    $var_scalar;    # Process scalar form.
-            $peek_all{$var_scalar} = $peek_all{$_};    # Link to same data.
-            $added_duplicates{$var_scalar}++
-              ;    # Expect to possibly see this duplcate.
+            push @{ $self->{vars_all} }, $var_scalar;
+            push @queue,                 $var_scalar;
+            $self->{peek_all}{$var_scalar} =
+              $self->{peek_all}{$_};
+            $added_duplicates{$var_scalar}++;
 
             say "Added $_: $var_scalar" if $self->debug;
         }
         elsif ( / ^ % /x ) {
             push @{ $self->{vars_hash} }, $_;
 
-            # Allow access via $hash{key} and @hash{key,key}
+            # Allow access via %hash, $hash{key} and @hash{key,key}
             my $var_scalar = '$' . substr( $_, 1 );
             my $var_array  = '@' . substr( $_, 1 );
-            push @vars_all, $var_scalar, $var_array;
-            push @queue,    $var_scalar, $var_array;
-            $peek_all{$var_scalar} = $peek_all{$var_array} = $peek_all{$_};
-            $added_duplicates{$var_scalar}++
-              ;    # Expect to possibly see this duplcate.
-            $added_duplicates{$var_array}++
-              ;    # Expect to possibly see this duplcate.
+            push @{ $self->{vars_all} }, $var_scalar, $var_array;
+            push @queue,                 $var_scalar, $var_array;
+            $self->{peek_all}{$var_scalar} = $self->{peek_all}{$var_array} =
+              $self->{peek_all}{$_};
+            $added_duplicates{$var_scalar}++;
+            $added_duplicates{$var_array}++;
 
             say "Added $_: $var_scalar, $var_array" if $self->debug;
         }
@@ -595,13 +640,11 @@ sub _setup_vars {
             push @{ $self->{vars_else} }, $_;
         }
     }
+}
 
-    my @commands = $self->_define_commands;
-    $self->{vars_all}              = \@vars_all;
-    $self->{commands}              = \@commands;
-    $self->{commands_and_vars_all} = [ @commands, @vars_all ];
+sub _normalize_var_defaults {
+    my ( $self ) = @_;
 
-    # Make sure all "vars_*" are defined, sorted, and uniq:
     my @vars = qw(
       vars_lexical
       vars_global
@@ -622,47 +665,16 @@ sub _setup_vars {
       vars_hash
 
       vars_else
+
+      commands
+      commands_and_vars_all
     );
+
+    # Make sure all "vars_*" are defined, sorted, and uniq:
     for ( @vars ) {
         $self->{$_} = [ uniq sort @{ $self->{$_} // [] } ];
     }
 
-    $self;
-}
-
-sub _step {
-    my ( $self ) = @_;
-
-    if ( not $self->{vars_all} ) {
-        $self->_setup_vars;
-        $self->help;    # Show help when first loading the debugger.
-    }
-
-    my $input = $self->term->readline( "perl>" ) // '';
-    say "input_after_readline=[$input]" if $self->debug;
-
-    # Change '#1' to '--maxdepth=1'
-    if ( $input =~ / ^ p\b /x ) {
-        $input =~ s/
-            \s*
-            \#(\d)     #2 to --maxdepth=2
-            \s*
-        $ /, '--maxdepth=$1'/x;
-    }
-
-    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
-    $input =~ s/ ^
-        (
-              help
-            | hist
-        ) \b
-        (.*)
-    $ /\$repl->$1($2)/x;
-
-    $self->_exit( $input ) if $input eq 'q';
-
-    say "input_after_step=[$input]" if $self->debug;
-    $input;
 }
 
 # Help
