@@ -4,12 +4,11 @@ Revision history for Runtime-Debugger
 0.10
 ====
 
-2022-11-28
-Fixed pod typo.
-Fixed some edge case issues.
-
 2022-11-29
 Fixed pod typos.
+Fixed some edge case issues.
+Test cases work now with lexical values.
+Improved array and hash completions.
 
 ====
 0.09

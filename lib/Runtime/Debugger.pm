@@ -234,6 +234,7 @@ sub _init {
     #
     # TODO: After testing is setup, try removing ">$@".
     $attribs->{completer_word_break_characters} =~ s/ [>] //xg;
+    $attribs->{completer_word_break_characters} .= '[';    # $my->[
     $attribs->{special_prefixes} = '$@%&';
 
     # Build the debugger object.
@@ -378,6 +379,26 @@ sub _complete_arrow {
         );
     }
 
+    # Hashref.
+    if ( ref( $obj_or_coderef ) eq "HASH" ) {
+        say "IS_HASH $obj_or_coderef" if $self->debug;
+        return $self->_match(
+            words   => ["{"],
+            prepend => "$text",
+            nospace => 1,
+        );
+    }
+
+    # Arrayref.
+    if ( ref( $obj_or_coderef ) eq "ARRAY" ) {
+        say "IS_ARRAY: $obj_or_coderef" if $self->debug;
+        return $self->_match(
+            words   => ["["],
+            prepend => "$text",
+            nospace => 1,
+        );
+    }
+
     say "NOT OBJECT or CODEREF: $obj_or_coderef" if $self->debug;
     return;
 }
@@ -393,7 +414,7 @@ sub _complete_hash {
     push @hash_keys, keys %$ref if reftype( $ref ) eq "HASH";
 
     $self->_match(
-        words   => \@hash_keys,
+        words   => [ sort @hash_keys ],
         partial => $text,
         nospace => 1,
     );
@@ -482,9 +503,9 @@ sub _setup_vars {
     my $peek_my      = peek_my( $levels );
     my $peek_our     = peek_our( $levels );
     my %peek_all     = ( %$peek_our, %$peek_my );
-    my @vars_lexical = sort keys %$peek_my;
-    my @vars_global  = sort keys %$peek_our;
-    my @vars_all     = sort uniq @vars_lexical, @vars_global;
+    my @vars_lexical = keys %$peek_my;
+    my @vars_global  = keys %$peek_our;
+    my @vars_all     = uniq @vars_lexical, @vars_global;
 
     # Cache variables.
     $self->{peek_my}      = $peek_my;
@@ -495,8 +516,22 @@ sub _setup_vars {
 
     # Separate variables by types.
     my @queue = @vars_all;    # Otherwise would mess with the for loop.
-    my %skip_processing;
+    my %already_stored;       #
+    my %added_duplicates;     # These are ok to have twice.
     while ( local $_ = shift @queue ) {
+
+        # Show duplcate variables with same name (probably different sigil).
+        if ( $already_stored{$_} ) {
+            if ( $self->debug or not $added_duplicates{$_} ) {
+                $self->_show_error(
+"Skipping variable with same name: '$_' (maybe same name, but different sigil?)"
+                );
+            }
+            next;
+        }
+
+        $already_stored{$_}++;    # First time seeing it then.
+
         if ( / ^ \$ /x ) {
             push @{ $self->{vars_scalar} }, $_;
 
@@ -527,55 +562,51 @@ sub _setup_vars {
                 push @{ $self->{vars_scalar_else} }, $_;
             }
         }
-
-        # elsif( $skip_processing{$_} ){
-        #     next;
-        # }
         elsif ( / ^ \@ /x ) {
             push @{ $self->{vars_array} }, $_;
 
             # Allow access via $array[0]
-            push @vars_all, '$' . substr( $_, 1 );
+            my $var_scalar = '$' . substr( $_, 1 );
+            push @vars_all, $var_scalar;    # Add as a possible completion.
+            push @queue,    $var_scalar;    # Process scalar form.
+            $peek_all{$var_scalar} = $peek_all{$_};    # Link to same data.
+            $added_duplicates{$var_scalar}++
+              ;    # Expect to possibly see this duplcate.
 
-            # push @queue,    $vars_all[-1];
-            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
-            # $skip_processing{ $vars_all[-1] }++;
-            # say "Adding $_";
+            say "Added $_: $var_scalar" if $self->debug;
         }
         elsif ( / ^ % /x ) {
             push @{ $self->{vars_hash} }, $_;
 
-            # Allow access via $hash[key]
-            push @vars_all, '$' . substr( $_, 1 );
+            # Allow access via $hash{key} and @hash{key,key}
+            my $var_scalar = '$' . substr( $_, 1 );
+            my $var_array  = '@' . substr( $_, 1 );
+            push @vars_all, $var_scalar, $var_array;
+            push @queue,    $var_scalar, $var_array;
+            $peek_all{$var_scalar} = $peek_all{$var_array} = $peek_all{$_};
+            $added_duplicates{$var_scalar}++
+              ;    # Expect to possibly see this duplcate.
+            $added_duplicates{$var_array}++
+              ;    # Expect to possibly see this duplcate.
 
-            # push @queue,    $vars_all[-1];
-            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
-            # $skip_processing{ $vars_all[-1] }++;
-            # say "Adding $_";
-
-            # Allow access via @hash[key,key]
-            push @vars_all, '@' . substr( $_, 1 );
-
-            # push @queue,    $vars_all[-1];
-            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
-            # $skip_processing{ $vars_all[-1] }++;
+            say "Added $_: $var_scalar, $var_array" if $self->debug;
         }
         else {
             push @{ $self->{vars_else} }, $_;
         }
     }
 
-    # p \@vars_all;
-    @vars_all = sort( @vars_all );
-    $self->{vars_all} = \@vars_all;
-
     my @commands = $self->_define_commands;
-
+    $self->{vars_all}              = \@vars_all;
     $self->{commands}              = \@commands;
-    $self->{commands_and_vars_all} = [ sort( @commands, @vars_all ) ];
+    $self->{commands_and_vars_all} = [ @commands, @vars_all ];
 
-    # Make sure above "vars_*" are all defined:
+    # Make sure all "vars_*" are defined, sorted, and uniq:
     my @vars = qw(
+      vars_lexical
+      vars_global
+      vars_all
+
       vars_scalar
       vars_string
       vars_ref
@@ -585,11 +616,16 @@ sub _setup_vars {
       vars_arrayref
       vars_ref_else
       vars_scalar_else
+
       vars_array
+
       vars_hash
+
       vars_else
     );
-    $self->{$_} //= [] for @vars;
+    for ( @vars ) {
+        $self->{$_} = [ uniq sort @{ $self->{$_} // [] } ];
+    }
 
     $self;
 }
