@@ -284,7 +284,16 @@ sub _complete {
 
     # Hash or hashref - Show possible keys and string variables.
     return $self->_complete_hash( "$1", @_ )
-      if substr( $line, 0, $end ) =~ / (\S+)->\{ [^}]* $ /x;
+      if substr( $line, 0, $end ) =~ /
+        (
+            [\$}@%]                 # Variable sigil.
+            (?:
+                (?!->|\s).)+        # Next if not a -> or space.
+        )
+        (?:->)?                     # Maybe a ->.
+        \{                          # Opening brace.
+        [^}]*                       # Any non braces.
+    $ /x;
 
     # Otherwise assume its a variable.
     return $self->_complete_vars( @_ );
@@ -379,7 +388,7 @@ sub _complete_hash {
     $self->_dump_args( @_ ) if $self->debug;
 
     my @hash_keys = @{ $self->{vars_string} };
-    my $ref       = $self->{peek_all}{$var};
+    my $ref       = $self->{peek_all}{$var} // '';
     $ref = $$ref if reftype( $ref ) eq "REF";
     push @hash_keys, keys %$ref if reftype( $ref ) eq "HASH";
 
@@ -483,15 +492,11 @@ sub _setup_vars {
     $self->{peek_all}     = \%peek_all;
     $self->{vars_lexical} = \@vars_lexical;
     $self->{vars_global}  = \@vars_global;
-    $self->{vars_all}     = \@vars_all;
-
-    my @commands = $self->_define_commands;
-
-    $self->{commands}              = \@commands;
-    $self->{commands_and_vars_all} = [ sort( @commands, @vars_all ) ];
 
     # Separate variables by types.
-    for ( @vars_all ) {
+    my @queue = @vars_all;    # Otherwise would mess with the for loop.
+    my %skip_processing;
+    while ( local $_ = shift @queue ) {
         if ( / ^ \$ /x ) {
             push @{ $self->{vars_scalar} }, $_;
 
@@ -522,16 +527,52 @@ sub _setup_vars {
                 push @{ $self->{vars_scalar_else} }, $_;
             }
         }
+
+        # elsif( $skip_processing{$_} ){
+        #     next;
+        # }
         elsif ( / ^ \@ /x ) {
             push @{ $self->{vars_array} }, $_;
+
+            # Allow access via $array[0]
+            push @vars_all, '$' . substr( $_, 1 );
+
+            # push @queue,    $vars_all[-1];
+            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
+            # $skip_processing{ $vars_all[-1] }++;
+            # say "Adding $_";
         }
         elsif ( / ^ % /x ) {
             push @{ $self->{vars_hash} }, $_;
+
+            # Allow access via $hash[key]
+            push @vars_all, '$' . substr( $_, 1 );
+
+            # push @queue,    $vars_all[-1];
+            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
+            # $skip_processing{ $vars_all[-1] }++;
+            # say "Adding $_";
+
+            # Allow access via @hash[key,key]
+            push @vars_all, '@' . substr( $_, 1 );
+
+            # push @queue,    $vars_all[-1];
+            # $peek_all{ $vars_all[-1] } = $peek_all{$_};
+            # $skip_processing{ $vars_all[-1] }++;
         }
         else {
             push @{ $self->{vars_else} }, $_;
         }
     }
+
+    # p \@vars_all;
+    @vars_all = sort( @vars_all );
+    $self->{vars_all} = \@vars_all;
+
+    my @commands = $self->_define_commands;
+
+    $self->{commands}              = \@commands;
+    $self->{commands_and_vars_all} = [ sort( @commands, @vars_all ) ];
 
     # Make sure above "vars_*" are all defined:
     my @vars = qw(

@@ -25,7 +25,7 @@ my $TAB_ALL = "\cI\e*"; # Add to string to autocomplete plus insert all matches.
 
 sub _setup_testmode_debugger {
 
-    $Runtime::Debugger::VERSION = "0.01";    # To make testing version easier.
+    $Runtime::Debugger::VERSION = "0.01";  # To make testing the version easier.
 
     # Use a separate history file.
     my $history_file = "$ENV{HOME}/.runtime_debugger_testmode.info";
@@ -118,20 +118,23 @@ sub _get_expected_vars {
     {
         commands              => [ 'help', 'hist', 'p', 'q' ],
         commands_and_vars_all => [
-            '$EOL',          '$INSTR',
-            '$RUN',          '$TAB',
-            '$TAB_ALL',      '$completion_return',
-            '$eval_return',  '$my_arrayref',
-            '$my_coderef',   '$my_hashref',
-            '$my_obj',       '$my_str',
-            '$our_arrayref', '$our_coderef',
-            '$our_hashref',  '$our_obj',
-            '$our_str',      '$repl',
-            '$stdin',        '$stdout',
-            '$step_return',  '%my_hash',
-            '%our_hash',     '@my_array',
-            '@our_array',    'help',
-            'hist',          'p',
+            '$EOL',         '$INSTR',
+            '$RUN',         '$TAB',
+            '$TAB_ALL',     '$completion_return',
+            '$eval_return', '$my_array',
+            '$my_arrayref', '$my_coderef',
+            '$my_hash',     '$my_hashref',
+            '$my_obj',      '$my_str',
+            '$our_array',   '$our_arrayref',
+            '$our_coderef', '$our_hash',
+            '$our_hashref', '$our_obj',
+            '$our_str',     '$repl',
+            '$stdin',       '$stdout',
+            '$step_return', '%my_hash',
+            '%our_hash',    '@my_array',
+            '@my_hash',     '@our_array',
+            '@our_hash',    'help',
+            'hist',         'p',
             'q'
         ],
         debug        => 0,
@@ -150,19 +153,22 @@ sub _get_expected_vars {
         #     '@our_array' => ['array-our']
         # },
         vars_all => [
-            '@our_array',    '%our_hash',
-            '$our_str',      '$our_obj',
-            '$our_hashref',  '$our_coderef',
-            '$our_arrayref', '@my_array',
-            '%my_hash',      '$step_return',
-            '$stdout',       '$stdin',
-            '$repl',         '$my_str',
-            '$my_obj',       '$my_hashref',
-            '$my_coderef',   '$my_arrayref',
-            '$eval_return',  '$completion_return',
-            '$TAB_ALL',      '$TAB',
-            '$RUN',          '$INSTR',
-            '$EOL'
+            '$EOL',         '$INSTR',
+            '$RUN',         '$TAB',
+            '$TAB_ALL',     '$completion_return',
+            '$eval_return', '$my_array',
+            '$my_arrayref', '$my_coderef',
+            '$my_hash',     '$my_hashref',
+            '$my_obj',      '$my_str',
+            '$our_array',   '$our_arrayref',
+            '$our_coderef', '$our_hash',
+            '$our_hashref', '$our_obj',
+            '$our_str',     '$repl',
+            '$stdin',       '$stdout',
+            '$step_return', '%my_hash',
+            '%our_hash',    '@my_array',
+            '@my_hash',     '@our_array',
+            '@our_hash'
         ],
         vars_array    => [ '@our_array', '@my_array' ],
         vars_arrayref => [
@@ -494,6 +500,7 @@ my @cases = (
             comp   => $repl->{vars_scalar},
             stdout => [],
         },
+        todo => 1,    # Scalar should include $hash and $array ?!
     },
     {
         name             => 'Print TAB complete: p $o ',
@@ -506,6 +513,7 @@ my @cases = (
             ],
             stdout => [],
         },
+        todo => 1,    # Scalar should include $hash and $array ?!
     },
     {
         name  => 'Print TAB complete: p $o<TAB>_ ',
@@ -518,6 +526,7 @@ my @cases = (
             ],
             stdout => [],
         },
+        todo => 1,    # Scalar should include $hash and $array ?!
     },
     {
         name             => 'Print TAB complete: p $<TAB>_str ',
@@ -530,6 +539,7 @@ my @cases = (
             ],
             stdout => [],
         },
+        todo => 1,    # Scalar should include $hash and $array ?!
     },
 
 
@@ -543,10 +553,8 @@ my @cases = (
         input            => '$' . $TAB,
         expected_results => {
             comp => $repl->{vars_scalar},
-
-            # Should include all: $scalar $array $hash $arrayref $hashref.
         },
-        todo => 1,
+        todo => 1,    # Scalar should include $hash and $array ?!
     },
 
     # Arrow - Code reference.
@@ -557,7 +565,7 @@ my @cases = (
             line   => '$my_coderef->(',
             stdout => [],
         },
-        todo => 1,
+        todo => 1,    # Only in the test it fails.
     },
     {
         name             => 'Arrow - coderef "$our->"',
@@ -573,10 +581,10 @@ my @cases = (
         name  => 'Scalar Sigil, Arrow - method "$my->(" before closing ")"',
         input => '$my_coderef->' . $TAB . ')',
         expected_results => {
-            line   => '$our_coderef->()',
+            line   => '$my_coderef->()',
             stdout => [],
         },
-        todo => 1,
+        todo => 1,    # Only in the test it fails.
     },
     {
         name  => 'Scalar Sigil, Arrow - method "$our->(" before closing ")"',
@@ -598,10 +606,8 @@ my @cases = (
         input            => '@' . $TAB,
         expected_results => {
             comp => $repl->{vars_array},
-
-            # Should include all: @array @hash
         },
-        todo => 1,
+        todo => 1,    # Array should include @hash ?!
     },
 
     # Complete an array with a "$" or "@" sigil
@@ -609,15 +615,16 @@ my @cases = (
         name             => 'Complete array - arrayref "$my_"',
         input            => '$my_array' . $TAB,
         expected_results => {
-            comp => ['$my_arrayref'],
+            comp => [ '$my_array', '$my_arrayref' ],
         },
-        todo => 1,
+
+        # todo => 1,
     },
     {
         name             => 'Complete array - arrayref "$our_"',
         input            => '$our_array' . $TAB,
         expected_results => {
-            comp => ['$my_arrayref'],
+            comp => ['$our_arrayref'],
         },
         todo => 1,
     },
