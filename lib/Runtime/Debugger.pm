@@ -36,9 +36,9 @@ our @EXPORT  = qw( run p );
 
 =head1 NAME
 
-Runtime::Debugger - Easy to use REPL with existing lexicals support.
+Runtime::Debugger - Easy to use REPL with existing lexical support.
 
-(emphasis on "existing" since I have not yet found this support in others modules).
+(emphasis on "existing" since I have not yet found this support in other modules).
 
 =head1 SYNOPSIS
 
@@ -251,7 +251,7 @@ sub _init {
 
     $self->_restore_history;
 
-    # Setup some signal hnndling.
+    # Setup some signal handling.
     for my $signal ( qw( INT TERM HUP ) ) {
         $SIG{$signal} = sub { $self->_exit( $signal ) };
     }

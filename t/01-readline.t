@@ -92,8 +92,6 @@ sub _do_per_case {
     my $fail;
   TODO: {
         local $TODO = $case->{name} if $case->{todo};
-
-        # todo_skip $case->{name}, 1 if $case->{todo};
         $fail = not is_deeply \%results, $expected_results, $case->{name};
     }
 
@@ -617,8 +615,6 @@ my @cases = (
         expected_results => {
             comp => [ '$my_array', '$my_arrayref' ],
         },
-
-        # todo => 1,
     },
     {
         name             => 'Complete array - arrayref "$our_"',
