@@ -386,8 +386,6 @@ sub _complete_arrow {
             push @$methods, "{" if reftype( $obj_or_coderef ) eq "HASH";
             push @$methods, @{ $self->{vars_string} };
             @$methods = uniq sort @$methods;
-
-            # push @$methods, $self->{vars_all}; # TODO: Add scalars.
         }
         say "methods: @$methods" if $self->debug;
 
@@ -441,17 +439,11 @@ sub _get_object_functions {
     my @functions = grep {
         !/ ^
         (?:
-              BEGIN
-            | UNITCHECK
-            | INIT
-            | CHECK
-            | END
-            | import
-            | AUTOLOAD
-            | DESTROY
+            import
         )
         $ /x
       }
+      grep { not / ^ [A-Z_]+ $ /x }    # Skip special functions.
       sort
       keys %{"${class}::"};
 
@@ -791,18 +783,21 @@ Can show more:
 
 sub hist {
     my ( $self, $levels ) = @_;
+    my @history_raw = $self->_history;
+    return if not @history_raw;
+
+    my @history =
+      map {
+        sprintf "%s %s",
+          colored( $_ + 1,           "YELLOW" ),
+          colored( $history_raw[$_], "GREEN" );
+      } ( 0 .. $#history_raw );
+
+    # Show a limited amount of items from history.
     $levels //= 20;
-    my @history = $self->_history;
+    @history = splice @history, -$levels if $levels < @history;
 
-    if ( @history and $levels < @history ) {
-        @history = splice @history, -$levels;
-    }
-
-    for my $index ( 0 .. $#history ) {
-        printf "%s %s\n",
-          colored( $index + 1,       "YELLOW" ),
-          colored( $history[$index], "GREEN" );
-    }
+    say for @history;
 }
 
 sub _history {

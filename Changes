@@ -8,6 +8,7 @@ Revision history for Runtime-Debugger
 Updated pod.
 Added some more test cases.
 Remove some TODOs.
+Improved history command.
 
 ====
 0.10

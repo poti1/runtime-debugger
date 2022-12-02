@@ -105,20 +105,7 @@ sub _define_expected_vars {
         ],
         debug        => 0,
         history_file => "$ENV{HOME}/.runtime_debugger_testmode.info",
-
-        # TODO: uncomment.
-        # Need to remove coderefs and objects first though.
-        #
-        # peek_all               => 'HASH(0x55e5a86f9148)',
-        # peek_my                => 'HASH(0x55e5a873f7f8)',
-        # peek_our => {
-        #     '$our_str'  => 'Func2',
-        #     '%our_hash' => {
-        #         'hash' => 'our'
-        #     },
-        #     '@our_array' => ['array-our']
-        # },
-        vars_all => [
+        vars_all     => [
             '$COMPLETION_RETURN', '$EOL',
             '$INSTR',             '$_repl',
             '$case',              '$eval_return',
@@ -282,7 +269,7 @@ sub _define_test_cases {
             input            => 'hist 3',
             nocolor          => ["stdout"],
             expected_results => {
-                stdout => [ '1 abc2', '2 hist', '3 hist 3' ],
+                stdout => [ '3 abc2', '4 hist', '5 hist 3' ],
             },
         },
         {
