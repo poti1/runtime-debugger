@@ -11,7 +11,7 @@ package MyTest;
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 67;
+use Test::More tests => 69;
 use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw( say );
@@ -378,6 +378,8 @@ sub _define_test_cases {
                 stdout => [],
             },
         },
+
+        # Print - TAB complete partial.
         {
             name             => 'Print TAB complete: "p $<TAB>"',
             input            => 'p $' . $TAB,
@@ -390,7 +392,7 @@ sub _define_test_cases {
             name             => 'Print TAB complete: p $o ',
             input            => 'p $o' . $TAB,
             expected_results => {
-                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_all} } ],
                 stdout => [],
             },
         },
@@ -398,7 +400,7 @@ sub _define_test_cases {
             name  => 'Print TAB complete: p $o<TAB>_ ',
             input => 'p $o' . $TAB . '_',    # Does not expand after tab.
             expected_results => {
-                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_all} } ],
                 stdout => [],
             },
         },
@@ -406,8 +408,25 @@ sub _define_test_cases {
             name             => 'Print TAB complete: p $<TAB>_str ',
             input            => 'p $o' . $TAB . '_str',
             expected_results => {
-                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_scalar} } ],
+                comp   => [ grep { / ^ \$o /x } @{ $_repl->{vars_all} } ],
                 stdout => [],
+            },
+        },
+        {
+            name             => 'Print TAB complete: "p $my_<TAB> . $our_str"',
+            input            => 'p $my_' . $TAB . ' . $our_str',
+            expected_results => {
+                comp   => [ grep { / ^ \$my_ /x } @{ $_repl->{vars_all} } ],
+                line   => 'p $my_ . $our_str',
+                stdout => [],
+            },
+        },
+        {
+            name             => 'Print TAB complete: "p $my_s<TAB> . $our_str"',
+            input            => 'p $my_s' . $TAB . ' . $our_str',
+            expected_results => {
+                line   => 'p $my_str . $our_str',
+                stdout => [q('Func1Func2')],
             },
         },
 

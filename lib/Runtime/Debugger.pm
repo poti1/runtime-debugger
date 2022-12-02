@@ -35,7 +35,7 @@ our @EXPORT  = qw( run p );
 
 =head1 NAME
 
-Runtime::Debugger - Easy to use REPL with existing lexical support.
+Runtime::Debugger - Easy to use REPL with existing lexical support and DWIM tab completion.
 
 (emphasis on "existing" since I have not yet found this support in other modules).
 
@@ -152,7 +152,7 @@ wherever you need it.
 
 =head2 Tab Completion
 
-This module has rich tab completion support:
+This module has rich, DWIM tab completion support:
 
  - Press TAB with no input to view commands and available variables in the current scope.
  - Press TAB after an arrow ("->") to auto append either a "{" or "[" or "(".
@@ -163,7 +163,6 @@ This module has rich tab completion support:
 =head2 History
 
 All commands run in the debugger are saved locally and loaded next time the module is loaded.
-
 
 =head2 Data::Dumper
 
@@ -226,14 +225,11 @@ sub _init {
     my $attribs = $term->Attribs;
     $term->ornaments( 0 );    # Remove underline from terminal.
 
-    # Removed these as break chars so that we can complete:
-    # "$scalar", "@array", "%hash" ("%" was already not in the list).
-    #
-    # Removed ">" to be able to complete for method calls: "$obj->$method"
-    #
-    # TODO: After testing is setup, try removing ">$@".
+    # Treat '$my->[' as one word.
     $attribs->{completer_word_break_characters} =~ s/ [>] //xg;
-    $attribs->{completer_word_break_characters} .= '[';    # $my->[
+    $attribs->{completer_word_break_characters} .= '[';
+
+    # Be able to complete: '$scalar', '@array', '%hash'.
     $attribs->{special_prefixes} = '$@%&';
 
     # Build the debugger object.
@@ -244,9 +240,8 @@ sub _init {
         debug        => $ENV{RUNTIME_DEBUGGER_DEBUG} // 0,
     }, $class;
 
-   # https://metacpan.org/pod/Term::ReadLine::Gnu#Custom-Completion
-   # Definition for list_completion_function is here: Term/ReadLine/Gnu/XS.pm
-   # $attribs->{completion_entry_function} = sub { $self->_complete_OLD( @_ ) };
+    # https://metacpan.org/pod/Term::ReadLine::Gnu#Custom-Completion
+    # Definition for list_completion_function is here: Term/ReadLine/Gnu/XS.pm
     $attribs->{attempted_completion_function} = sub { $self->_complete( @_ ) };
 
     $self->_restore_history;
