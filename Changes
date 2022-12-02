@@ -9,6 +9,7 @@ Updated pod.
 Added some more test cases.
 Remove some TODOs.
 Improved history command.
+Added tests for simple array and hash operations.
 
 ====
 0.10

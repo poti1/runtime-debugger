@@ -11,7 +11,7 @@ package MyTest;
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 69;
+use Test::More tests => 71;
 use Runtime::Debugger;
 use Term::ANSIColor qw( colorstrip );
 use feature         qw( say );
@@ -413,7 +413,7 @@ sub _define_test_cases {
             input            => 'p $my_s' . $TAB . ' . $our_str',
             expected_results => {
                 line   => 'p $my_str . $our_str',
-                stdout => [q('Func1Func2')],
+                stdout => [ '"' . $my_str . $our_str . '"' ],
             },
         },
 
@@ -611,6 +611,23 @@ sub _define_test_cases {
             },
         },
 
+        # Can update an array.
+        {
+            name  => 'Can update an array - add element',
+            input => 'push @my_array, qw( elem1 elem2 ); p \@my_array',
+            expected_results => {
+                'stdout' =>
+                  [ '[', '  "array-my",', '  "elem1",', '  "elem2"', ']' ]
+            },
+        },
+        {
+            name             => 'Can update an array - remove element',
+            input            => 'shift @my_array; p \@my_array',
+            expected_results => {
+                'stdout' => [ '[', '  "elem1",', '  "elem2"', ']' ]
+            },
+        },
+
         #
         # Hashs.
         #
@@ -720,6 +737,28 @@ sub _define_test_cases {
                 comp   => [ sort keys %our_hash, @{ $_repl->{vars_string} } ],
                 line   => '$our_hash{',
                 stdout => [],
+            },
+        },
+
+        # Can update a hash.
+        {
+            name             => 'Can update a hash - add key',
+            input            => '$my_hash{new_key} = "new_val"; p \%my_hash',
+            expected_results => {
+                'stdout' => [
+                    '{',
+                    '  "key1" => "a",',
+                    '  "key2" => "b",',
+                    '  "new_key" => "new_val"', '}'
+                ]
+            },
+        },
+        {
+            name             => 'Can update a hash - remove key',
+            input            => 'delete $my_hash{key1}; p \%my_hash',
+            expected_results => {
+                'stdout' =>
+                  [ '{', '  "key2" => "b",', '  "new_key" => "new_val"', '}' ]
             },
         },
 

@@ -881,9 +881,10 @@ sub p {
 
     my $d = Data::Dumper
       ->new( \@_ )
+      ->Indent( 1 )
       ->Sortkeys( 1 )
       ->Terse( 1 )
-      ->Indent( 1 )
+      ->Useqq( 1 )
       ->Maxdepth( $maxdepth );
 
     return $d->Dump if wantarray;
