@@ -15,11 +15,11 @@ jobs:
     name: Build distribution
     runs-on: ubuntu-20.04
     container:
-      image: perldocker/perl-tester:5.34
+      image: perldocker/perl-tester:5.38
     steps:
 
       - name: Checkout docker/package
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Show perl version
         run: perl -V
@@ -50,7 +50,7 @@ jobs:
           perl Build test
 
       - name: Upload artifact for next steps
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build_dir
           path: build_dir
@@ -59,14 +59,14 @@ jobs:
     needs: build-job
     runs-on: ubuntu-20.04
     container:
-      image: perldocker/perl-tester:5.34
+      image: perldocker/perl-tester:5.38
     steps:
 
       - name: Checkout docker/package
-        uses: actions/checkout@v3 # codecov wants to be inside a Git repository
+        uses: actions/checkout@v4 # codecov wants to be inside a Git repository
 
       - name: Download artifact from build step
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build_dir
           path: .
@@ -103,13 +103,13 @@ jobs:
     steps:
 
       - name: Set up perl
-        uses: shogo82148/actions-setup-perl@v1
+        uses: shogo82148/actions-setup-perl@v1.28.0
         with:
           perl-version: ${{ matrix.perl-version }}
           distribution: ${{ matrix.distribution }}
 
       - name: Download artifact from build step
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build_dir
           path: .
