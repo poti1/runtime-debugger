@@ -24,7 +24,7 @@ use feature         qw( say );
 my $my_str      = "Func1";
 my @my_array    = "array-my";
 my $my_arrayref = ["array-my"];
-my %my_hash     = qw(key1 a key2 b);
+my %my_hash     = ( key1 => "a", key2 => "b", key3 => { key3b => "val" } );
 my $my_hashref  = {qw(key1 a key2 b)};
 my $my_coderef  = sub { "coderef-my: @_" };
 my $my_obj      = bless { type => "my" }, "MyObj";
@@ -684,6 +684,15 @@ sub _define_test_cases {
             },
         },
 
+#       # TAB after after hashref arrow (2nd level).
+#       {
+#           name             => 'TAB after after hashref arrow (2nd level) - "$my->"',
+#           input            => '$my_hashref->{k1}' . $TAB,
+#           expected_results => {
+#               line => '$my_hashref->{}{',
+#           },
+#       },
+
         # TAB after hashref arrow and brace.
         {
             name             => 'TAB after hashref arrow and brace - "$my->{"',
@@ -723,25 +732,46 @@ sub _define_test_cases {
             },
         },
 
+# TODO: TAB after hash brace (no arrow), 2nd level.
+#  {
+#      name             => 'TAB after hash brace (no arrow), 2nd level - "$my{key}{"',
+#      input            => '$my_hash{key3}{' . $TAB,
+#      expected_results => {
+#          comp => [ sort keys %{$my_hash{key3}} ],
+#          line => '$my_hash{key3}{',
+#      },
+#  },
+
         # Can update a hash.
         {
-            name             => 'Can update a hash - add key',
-            input            => '$my_hash{new_key} = "new_val"; d \%my_hash',
+            name  => 'Can update a hash - add key',
+            input => '$my_hash{new_key} = "new_val"; say np %my_hash',
             expected_results => {
-                'stdout' => [
+                stdout => [
                     '{',
-                    '  "key1" => "a",',
-                    '  "key2" => "b",',
-                    '  "new_key" => "new_val"', '}'
-                ]
+                    '    key1      "a",',
+                    '    key2      "b",',
+                    '    key3      {',
+                    '        key3b   "val"',
+                    '    },',
+                    '    new_key   "new_val"',
+                    '}',
+                ],
             },
         },
         {
             name             => 'Can update a hash - remove key',
-            input            => 'delete $my_hash{key1}; d \%my_hash',
+            input            => 'delete $my_hash{key1}; say np %my_hash',
             expected_results => {
-                'stdout' =>
-                  [ '{', '  "key2" => "b",', '  "new_key" => "new_val"', '}' ]
+                stdout => [
+                    '{',
+                    '    key2      "b",',
+                    '    key3      {',
+                    '        key3b   "val"',
+                    '    },',
+                    '    new_key   "new_val"',
+                    '}',
+                ],
             },
         },
 

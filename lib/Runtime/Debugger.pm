@@ -32,8 +32,8 @@ use feature         qw( say state );
 use parent          qw( Exporter );
 use subs            qw( d uniq );
 
-our $VERSION = '0.13';
-our @EXPORT  = qw( run p d );
+our $VERSION = '0.14';
+our @EXPORT  = qw( run np p d );
 our $FILTER  = 1;
 
 =head1 NAME
@@ -249,6 +249,7 @@ sub run {
     use warnings;
     use feature qw(say);
     my $repl = Runtime::Debugger->_init;
+    local $@;
     eval {
         while ( 1 ) {
             eval $repl->_step;
@@ -358,16 +359,7 @@ sub _complete {
 
     # Hash or hashref - Show possible keys and string variables.
     return $self->_complete_hash( "$1", @_ )
-      if substr( $line, 0, $end ) =~ /
-        (
-            [\$}@%]                 # Variable sigil.
-            (?:
-                (?!->|\s).)+        # Next if not a -> or space.
-        )
-        (?:->)?                     # Maybe a ->.
-        \{                          # Opening brace.
-        [^}]*                       # Any non braces.
-    $ /x;
+      if substr( $line, 0, $end ) =~ $self->_is_hash_match();
 
     # Otherwise assume its a variable.
     return $self->_complete_vars( @_ );
@@ -500,6 +492,21 @@ sub _get_object_functions {
       keys %{"${class}::"};
 
     \@functions;
+}
+
+sub _is_hash_match {
+    my ( $self ) = @_;
+
+    qr{
+        (
+            [\$\}@%]                 # Variable sigil.
+            (?: (?!->|\s). )+       # Next if not a -> or space.
+        )
+        (?:->)?                     # Maybe a ->.
+        \{                          # Opening brace.
+        [^\}]*                       # Any non braces.
+        $                           # EOL.
+    }x;
 }
 
 sub _complete_hash {
@@ -1034,6 +1041,27 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >> E<0x1f42a>E<0x1f977>
 
 Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
+=head2 Control-C
+
+Doing a Control-C may occassionally break the output in your terminal.
+
+Simply run any one of these:
+
+ reset
+ tset
+ stty echo
+
+=head2 undef Variable
+
+inside a long running (and perhaps complicated) script, a variable
+may become undef.
+
+It may be that the padwalker perhaps is confused (not sure).
+Try running this:
+
+ perl>delete $repl->{vars_all}
+
+Otherwise, restart the script.
 
 =head1 SUPPORT
 
