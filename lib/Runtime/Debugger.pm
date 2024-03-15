@@ -231,8 +231,9 @@ sub import {
 }
 
 FILTER {
-    return if !$FILTER;
-    $_ = run() . $_;
+    if ( $FILTER ) {
+        $_ = run() . $_;
+    }
 };
 
 =head2 run
