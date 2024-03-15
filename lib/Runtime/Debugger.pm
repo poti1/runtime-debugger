@@ -22,7 +22,6 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Data::Printer;
-use Try::Tiny;
 use Term::ReadLine;
 use Term::ANSIColor qw( colored );
 use PadWalker       qw( peek_my  peek_our );
