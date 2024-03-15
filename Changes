@@ -1,6 +1,14 @@
 Revision history for Runtime-Debugger
 
 ====
+0.15
+====
+
+2024-03-15
+
+Removed source filter (why did I even add it before ???)
+
+====
 0.14
 ====
 
