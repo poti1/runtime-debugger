@@ -22,6 +22,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Data::Printer;
+use Filter::Simple;
 use Term::ReadLine;
 use Term::ANSIColor qw( colored );
 use PadWalker       qw( peek_my  peek_our );
@@ -33,6 +34,7 @@ use subs            qw( d uniq );
 
 our $VERSION = '0.15';
 our @EXPORT  = qw( run np p d );
+our $FILTER  = 1;
 
 =head1 NAME
 
@@ -42,7 +44,11 @@ Runtime::Debugger - Easy to use REPL with existing lexical support and DWIM tab 
 
 =head1 SYNOPSIS
 
-Start the debugger:
+Start the debugger in a script:
+
+    use Runtime::Debugger;
+
+Start the debugger (ONLY on the commandline):
 
     perl -MRuntime::Debugger -E 'eval run'
 
@@ -149,7 +155,6 @@ This module basically inserts a read, evaluate, print loop (REPL)
 wherever you need it.
 
     use Runtime::Debugger;
-    eval run;
 
 =head2 Tab Completion
 
@@ -194,6 +199,42 @@ You can make global variables though if:
 
 =cut
 
+# Initialize
+
+=head2 import
+
+Updates the import list to disable source filtering if needed.
+
+It appears that a source filter cannot process a one-liner :(
+
+=cut
+
+sub import {
+    my ( $class, @args_raw ) = @_;
+    my @args;
+
+    # Source filters do not seem to work with one-liners.
+    # Should manually invoke "eval run".
+    if ( $0 eq "-e" ) {
+        $FILTER = 0;
+    }
+
+    for my $arg ( @args_raw ) {
+        if ( $arg eq "-nofilter" ) {
+            $FILTER = 0;
+            next;
+        }
+        push @args, $arg;
+    }
+
+    $class->export_to_level( 1, $class, @args );
+}
+
+FILTER {
+    return if !$FILTER;
+    $_ = run() . $_;
+};
+
 =head2 run
 
 Runs the REPL (dont forget eval!)
@@ -201,6 +242,8 @@ Runs the REPL (dont forget eval!)
  eval run
 
 Sets C<$@> to the exit reason like 'INT' (Control-C) or 'q' (Normal exit/quit).
+
+Do NOT use this unless for oneliners (which do not support source filters).
 
 =cut
 
@@ -1014,12 +1057,23 @@ Simply run any one of these:
 inside a long running (and perhaps complicated) script, a variable
 may become undef.
 
-It may be that the padwalker perhaps is confused (not sure).
-Try running this:
+This piece of code demonstrates the problem with using c<eval run>.
 
- perl>delete $repl->{vars_all}
-
-Otherwise, restart the script.
+ sub Func {
+     my ($code) = @_;
+     $code->();
+ }
+ 
+ Func( sub{
+     my $v2 = 222;
+     
+     # This causes issues.
+     use Runtime::Debugger -nofilter;
+     eval run;
+ 
+     # Whereas, this one uses a source filter and works.
+     use Runtime::Debugger;
+ });
 
 =head1 SUPPORT
 
