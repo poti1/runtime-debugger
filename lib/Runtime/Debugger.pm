@@ -211,13 +211,10 @@ sub run {
     use feature qw(say);
     my $repl = Runtime::Debugger->_init;
     local $@;
-    eval {
-        while ( 1 ) {
-            eval $repl->_step;
-            $repl->_show_error($@) if $@;
-        }
-    };
-    $repl->_show_error($@) if $@;
+    while ( 1 ) {
+        eval $repl->_step;
+        $repl->_show_error($@) if $@;
+    }
 CODE
 }
 
