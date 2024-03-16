@@ -227,12 +227,19 @@ sub import {
         push @args, $arg;
     }
 
+    if ($ENV{RUNTIME_DEBUGGER_DEBUG}){
+        say "Imported args: [@args]";
+    }
+
     $class->export_to_level( 1, $class, @args );
 }
 
 FILTER {
     if ( $FILTER ) {
         $_ = run() . $_;
+        if ($ENV{RUNTIME_DEBUGGER_DEBUG}){
+            say "Inserted REPL code!";
+        }
     }
 };
 
@@ -250,6 +257,9 @@ Do NOT use this unless for oneliners (which do not support source filters).
 
 sub run {
     <<'CODE';
+    ######################################
+    #            REPL CODE
+    ######################################
     use strict;
     use warnings;
     use feature qw(say);
@@ -259,6 +269,7 @@ sub run {
         eval $repl->_step;
         $repl->_show_error($@) if $@;
     }
+    ######################################
 CODE
 }
 
