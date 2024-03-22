@@ -254,9 +254,11 @@ Simply add these lines:
     use Runtime::Debugger;
     repl;
 
-This will basically insert a read, evaluate, print loop (REPL).
+This will basically insert a read, evaluate,
+print loop (REPL).
 
-This should work for more cases (just try not to use nasty perl magic).
+This should work for more cases (just try not
+to use nasty perl magic).
 
 =head3 Goal
 
@@ -276,6 +278,44 @@ But instead for eval:
 
 Given C<eval_in_scope(1)>, that would evaluate an expression,
 but in a scope/context one level higher.
+
+=head3 Implementation
+
+=head4 Scope
+
+In order to eval a string of perl code correctly,
+we need to figure out at which level the variable
+is located.
+
+=head4 Peek
+
+Given the scope level, peek_my/our is utilized
+to grab all the variables.
+
+=head4 Preprocess
+
+Then we need to preprocess the piece of perl code
+that would be evaled.
+
+At this stage variables would be replaced which
+their equivalent representation at found in
+peek_my/our.
+
+=head4 Eval
+
+Finally, eval the string.
+
+=head3 Future Ideas
+
+One idea would be to create an XS function
+which can perform an eval in specific scope,
+but naturally without the translation magic
+that is currently being done.
+
+This might appear like peek_my, but for eval.
+So something like this:
+
+ eval_in_scope("STRING_TO_EVAL", SCOPE_LEVEL);
 
 =cut
 
@@ -657,6 +697,7 @@ sub _define_regex {
                     ) .
                 )++ # Should not be empty.
             )
+            (?{ say "unquoted: |$`<$&>$'|" if $self->debug })
 
             |
 
@@ -667,21 +708,31 @@ sub _define_regex {
             # Double quotes.
             $qq
                 (?<quoted>
-                    (?:
-                        [^$qq\\]* | \.
-                    )*+
+                    (?>               # Do not backtrack.
+                        [^$qq\\]*     # None quote or escape.
+                        (?:           # maybe followed by
+                            \\.       # an escape
+                            [^$qq\\]* # and more none quotes or escapes.
+                        )*
+                    )
                 )
             $qq
+            (?{ say "qq:       |$`<$&>$'|" if $self->debug })
 
             |
 
             # Single quotes.
             # (no capture to skip it).
             $q
-                (?:
-                    [^$q\\]* | \.
-                )*+
+                (?>
+                    [^$q\\]*
+                    (?:
+                        \\.
+                        [^$q\\]*
+                    )*
+                )
             $q
+            (?{ say "q:        |$`<$&>$'|" if $self->debug })
 
             |
 
@@ -689,6 +740,7 @@ sub _define_regex {
             \b q[qr] \b \s* (?<quoted>
                 (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
             )
+            (?{ say "qr:       |$`<$&>$'|" if $self->debug })
 
             |
 
@@ -697,36 +749,35 @@ sub _define_regex {
             \b qw? \b \s* (?:
                 (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
             )
+            (?{ say "qw:       |$`<$&>$'|" if $self->debug })
                 
-            (?{ say "text: |$`<$&>$'|" if $self->debug })
-
             # Sub pattern definitions.
             (?(DEFINE)
                 (?<PARENS>
                     \(
                         (?:
-                            [^()\\]*+ | \. | (?&PARENS)
+                            [^()\\]*+ | \\. | (?&PARENS)
                         )*+
                     \)
                 )
                 (?<CURLY>
                     \{
                         (?:
-                            [^{}\\]*+ | \. | (?&CURLY)
+                            [^{}\\]*+ | \\. | (?&CURLY)
                         )*+
                     \}
                 )
                 (?<SQUARE>
                     \[
                         (?:
-                            [^\[\]\\]*+ | \. | (?&SQUARE)
+                            [^\[\]\\]*+ | \\. | (?&SQUARE)
                         )*+
                     \]
                 )
                 (?<ANGLE>
                     <
                         (?:
-                            [^<>\\]*+ | \. | (?&ANGLE)
+                            [^<>\\]*+ | \\. | (?&ANGLE)
                         )*+
                     >
                 )
@@ -794,14 +845,14 @@ sub _step {
     my $input = $self->term->readline( "perl>" ) // '';
     say "input_after_readline=[$input]" if $self->debug;
 
-    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
+    # Change "COMMAND ARG" to "$self->COMMAND(ARG)".
     $input =~ s/ ^
         (
               help
             | hist
         ) \b
         (.*)
-    $ /\$repl->$1($2)/x;
+    $ /\$self->$1($2)/x;
 
     $self->_exit( $input ) if $input eq 'q';
 
@@ -813,9 +864,7 @@ sub _repl_step {
     my ( $repl ) = @_;
 
     # Show help when first loading the debugger.
-    if ( not $repl->{first_run}++ ) {
-        $repl->help;
-    }
+    $repl->help if not $repl->{first_run}++;
 
     my $input = $repl->term->readline( "perl>" ) // '';
     say "input_after_readline=[$input]" if $repl->debug;

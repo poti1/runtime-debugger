@@ -9,7 +9,8 @@ use Test::More tests => 73;
 use Runtime::Debugger;
 use e;
 
-$ENV{RUNTIME_DEBUGGER_DEBUG} = 1;
+# Can enable for more outout when debugging.
+$ENV{RUNTIME_DEBUGGER_DEBUG} = 0;
 
 {
     package A;
@@ -332,38 +333,6 @@ sub run_suite {
                 },
             },
         },
-        {
-            name  => "Interpolate array",
-            input => '"@a"',
-            expected => {
-                apply_peeks => '"@{$repl->{peek_all}{qq(\@a)}}"',
-                eval_result => "1 2",
-                vars_after  => sub {
-                    is_deeply \@a, [ 1, 2 ], shift;
-                },
-            },
-        },
-        {
-            name  => "Interpolate array element",
-            input => '"$a[1]"',
-            expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\@a)}}[1]"',
-                eval_result => "2",
-                vars_after  => sub {
-                    is_deeply \@a, [ 1, 2 ], shift;
-                },
-            },
-        },
-        {
-            name  => "Interpolate array elements",
-            input => 'say "@a[1,2]"',
-            expected => {
-                apply_peeks => 'say "@{$repl->{peek_all}{qq(\@a)}}[1,2]"',
-                vars_after  => sub {
-                    is_deeply \@a, [ 1, 2 ], shift;
-                },
-            },
-        },
 
         # Hash.
         {
@@ -433,11 +402,116 @@ sub run_suite {
                 },
             },
         },
+
+        # TODO
+
+        # Nested structures.
+
+        # Quoted: "
         {
-            name  => "Interpolate hash",
+            name  => "Double quoted scalar",
+            input => '"$s"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}"',
+                eval_result => "777",
+                vars_after    => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted array ref",
+            input => '"$ar->[1]"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$ar)}}->[1]"',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted hash ref",
+            input => '"$hr->{b}"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$hr)}}->{b}"',
+                eval_result => 2,
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted object key",
+            input => '"$o->{cat}"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->{cat}"',
+                eval_result => 5,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted object method",
+            input => '"$o->get"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->get"',
+                eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted scalar with fake method",
+            input => '"$s->get"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}->get"',
+                eval_result => "777->get",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted array",
+            input => '"@a"',
+            expected => {
+                apply_peeks => '"@{$repl->{peek_all}{qq(\@a)}}"',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Double quotes array element",
+            input => '"$a[1]"',
+            expected => {
+                apply_peeks => '"${$repl->{peek_all}{qq(\@a)}}[1]"',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Double quotes array elements",
+            input => 'say "@a[1,2]"',
+            expected => {
+                apply_peeks => 'say "@{$repl->{peek_all}{qq(\@a)}}[1,2]"',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Double quoted hash",
             input => '"%h"',
             expected => {
-                apply_peeks => '"%{$repl->{peek_all}{qq(\%h)}}"',
+                apply_peeks => '"%h"',
                 eval_result => "%h",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -445,7 +519,7 @@ sub run_suite {
             },
         },
         {
-            name  => "Interpolate hash key",
+            name  => "Double quoted hash key",
             input => '"$h{b}"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\%h)}}{b}"',
@@ -456,8 +530,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Interpolate hash keys",
-            input => '"%h{qw( a b )}"',
+            name  => "Double quoted hash keys",
+            input => '"@h{qw( a b )}"',
             expected => {
                 apply_peeks => '"@{$repl->{peek_all}{qq(\%h)}}{qw( a b )}"',
                 eval_result => "1 2",
@@ -467,13 +541,141 @@ sub run_suite {
             },
         },
 
-        # TODO
-
-        # Nested structures.
-
-        # Quoted: "
-
         # Quoted: '
+        {
+            name  => "Single quoted scalar",
+            input => q('$s'),
+            expected => {
+                apply_peeks => q('$s'),
+                eval_result => q($s),
+                vars_after    => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted array ref",
+            input => q('$ar->[1]'),
+            expected => {
+                apply_peeks => q('$ar->[1]'),
+                eval_result => q($ar->[1]),
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted hash ref",
+            input => q('$hr->{b}'),
+            expected => {
+                apply_peeks => q('$hr->{b}'),
+                eval_result => q($hr->{b}),
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted object key",
+            input => q('$o->{cat}'),
+            expected => {
+                apply_peeks => q('$o->{cat}'),
+                eval_result => q($o->{cat}),
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted object method",
+            input => q('$o->get'),
+            expected => {
+                apply_peeks => q('$o->get'),
+                eval_result => q($o->get),
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted scalar with fake method",
+            input => q('$s->get'),
+            expected => {
+                apply_peeks => q('$s->get'),
+                eval_result => q($s->get),
+                vars_after  => sub {
+                    is $s, 777, shift;
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted array",
+            input => q('@a'),
+            expected => {
+                apply_peeks => q('@a'),
+                eval_result => q(@a),
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Single quotes array element",
+            input => q('$a[1]'),
+            expected => {
+                apply_peeks => q('$a[1]'),
+                eval_result => q($a[1]),
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Single quotes array elements",
+            input => q('@a[1,2]'),
+            expected => {
+                apply_peeks => q('@a[1,2]'),
+                eval_result => q(@a[1,2]),
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted hash",
+            input => q('%h'),
+            expected => {
+                apply_peeks => q('%h'),
+                eval_result => q(%h),
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted hash key",
+            input => q('$h{b}'),
+            expected => {
+                apply_peeks => q('$h{b}'),
+                eval_result => q($h{b}),
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name  => "Single quoted hash keys",
+            input => q('@h{qw( a b )}'),
+            expected => {
+                apply_peeks => q('@h{qw( a b )}'),
+                eval_result => q(@h{qw( a b )}),
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
 
         # Quoted: qq
 
@@ -500,12 +702,22 @@ sub run_suite {
 
         # Check result of eval.
         if ( $case->{expected}{eval_result} ) {
-            my $evaled = eval $applied;
-            last unless is(
-                $evaled,
-                $case->{expected}{eval_result},
-                "$case->{name} - eval result",
-            );
+            my $expected = $case->{expected}{eval_result};
+            my $actual   = eval $applied;
+            if ( ref($expected) eq ref(qr//) ){
+                last unless like(
+                    $actual,
+                    $expected,
+                    "$case->{name} - eval result (regex)",
+                );
+            }
+            else {
+                last unless is(
+                    $actual,
+                    $expected,
+                    "$case->{name} - eval result",
+                );
+            }
         }
 
         # Check variables are actually set.
@@ -543,6 +755,7 @@ sub Func {
 Func();
 
 sub {
+    say "";
     title "Code Reference";
     run_suite();
 }->();
