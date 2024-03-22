@@ -1,57 +1,44 @@
 #!/usr/bin/env perl
 
-# Use case which causes Runtime::Debugger
-# to "lose" track of variables.
-#
-# print $v.
-# First time is ok.
-# Next time is not:
-# Variable "$v" is not available at (eval 13) line 1.
+use lib qw( ../../lib );
 
-=pod
-
-Statement
-Evaled statement
-
-Function.
-Evaled function.
-
-Coderef.
-Evaled coderef.
-
-Slurp, Statement
-Slurp, Evaled statement
-
-Slurp, Function.
-Slurp, Evaled function.
-
-Slurp, Coderef.
-Slurp, Evaled coderef.
-
-
-=cut
+BEGIN {
+    $ENV{RUNTIME_DEBUGGER_DEBUG} = 1;
+}
 
 use feature 'say';
 
-sub Func {
-    my ( $code ) = @_;
-    $code->();
-}
+=pod
 
-Func(
-    sub {
-        my $v = 222;
-        say "In coderef";
+Manually need to trigger eval run.
 
-        # This causes lossy variable issues.
-        use Runtime::Debugger;
-     #  eval run;
+FILTER is not triggered!
 
-        # Whereas, this one uses a source filter and works.
-        # use Runtime::Debugger;
-    }
+Eval run works and is not lossy.
+
+=cut
+
+eval q(
+    my $v = 111;
+    
+    # Does not work.
+    # use Runtime::Debugger;
+   
+    # Same, does not work.
+    # require Runtime::Debugger;
+    # Runtime::Debugger->import;
+
+    # Works.
+    use Runtime::Debugger -nofilter;
+    eval run;
+
+    # Also works since FILTER is NOT triggered.
+    # use Runtime::Debugger;
+    # eval run;
+
+    say "END inner";
 );
 
-say "Loaded pl";
+say "END";
 
-22;
+1;
