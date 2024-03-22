@@ -30,6 +30,7 @@ use Scalar::Util    qw( blessed reftype );
 use Class::Tiny     qw( term attr debug );
 use feature         qw( say );
 use parent          qw( Exporter );
+use subs            qw( d );
 
 our $VERSION = '0.15';
 our @EXPORT  = qw( run repl np d p );
@@ -563,20 +564,41 @@ sub _normalize_var_defaults {
 
 }
 
+=head2 _apply_peeks
+
+Transform variables in a code string
+into references to the same variable
+as found with peek_my/our.
+
+Try to insert the peek_my/our references
+(peeks) only when needed (should appear
+natural to the user).
+
+Should NOT transform this:
+
+ say "%h"
+
+Instead, this:
+
+ say "@a"
+
+Might be transformed into:
+
+ say "@{$repl->{peeks_all}{'@a'}}";
+
+=cut
+
 sub _apply_peeks {
     my ($self, $code) = @_;
     my $r = $self->_define_regex;
 
     say "code:  [$code]" if $self->debug;
 
-  # p $r->{text};
-
     $code =~ s{
-        (?{ say "A |$`<$&>$'|" })
         ($r->{text})
     }{
         local $_ = "$1";
-        p $+ if $self->debug;
+        d \%+ if $self->debug;
 
         if($+{unquoted}){
             s/$r->{var_unquoted}/$self->_to_peek(%+)/ge;
@@ -594,6 +616,7 @@ sub _apply_peeks {
 }
 
 sub _define_regex {
+    my ($self) = @_;
 
     # Some are mainly defined here just to
     # keep my editor code folding functional.
@@ -621,7 +644,6 @@ sub _define_regex {
         }x,
 
         text => qr{
-            (?{ say "B |$`<$&>$'|" })
 
             # Not any (common) form of quotes.
             (?<unquoted>
@@ -633,7 +655,7 @@ sub _define_regex {
                         |
                         \b q[qrw]? \b
                     ) .
-                )*+
+                )++ # Should not be empty.
             )
 
             |
@@ -675,6 +697,8 @@ sub _define_regex {
             \b qw? \b \s* (?:
                 (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
             )
+                
+            (?{ say "text: |$`<$&>$'|" if $self->debug })
 
             # Sub pattern definitions.
             (?(DEFINE)
@@ -707,7 +731,7 @@ sub _define_regex {
                     >
                 )
             )
-        },
+        }x,
 
     }
 }
