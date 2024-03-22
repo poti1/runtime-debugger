@@ -112,7 +112,7 @@ Sample Output:
 
  $ print $my_var
  Compile error: Global symbol "$my_var" requires explicit package name ...
- 
+
  $ print $our_var
  Compile error: Global symbol "$our_var" requires explicit package name ...
 
@@ -370,7 +370,7 @@ sub _init {
     $attribs->{attempted_completion_function} = sub { $self->_complete( @_ ) };
 
     $self->_restore_history;
-        
+
     $self->_setup_vars;
 
     # Setup some signal handling.
@@ -566,14 +566,26 @@ sub _normalize_var_defaults {
 sub _apply_peeks {
     my ($self, $code) = @_;
     my $r = $self->_define_regex;
-    p $r;
 
     say "code:  [$code]" if $self->debug;
 
+  # p $r->{text};
+
     $code =~ s{
-        $r->{var_norm}
+        (?{ say "A |$`<$&>$'|" })
+        ($r->{text})
     }{
-        $self->_to_peek(%+)
+        local $_ = "$1";
+        p $+ if $self->debug;
+
+        if($+{unquoted}){
+            s/$r->{var_unquoted}/$self->_to_peek(%+)/ge;
+        }
+        elsif($+{quoted}){
+            s/$r->{var_quoted}/$self->_to_peek(%+)/ge;
+        }
+
+        $_;
     }xge;
 
     say "code:  [$code]" if $self->debug;
@@ -582,49 +594,119 @@ sub _apply_peeks {
 }
 
 sub _define_regex {
-    my $qq = '"'; # Make editor happy.
-    my $q  = "'";
+
+    # Some are mainly defined here just to
+    # keep my editor code folding functional.
+    my $var_name  = qr{ [_A-Za-z]\w* }x;
+    my $any_3     = qr{ .{0,3} }x;
+    my $qq        = '"';
+    my $q         = "'";
 
     {
 
-        var_norm => qr{
+        var_unquoted => qr{
             (?<var>
                 (?<sigil> [\$\@%] )
-                (?<name> [_A-Za-z]\w* )
+                (?<name> $var_name )
             )
-            (?= (?<next> .{0,3} ) )
+            (?= (?<next> $any_3 ) )
         }x,
 
-        var_interp => qr{
+        var_quoted => qr{
             (?<var>
                 (?<sigil> [\$\@] )
-                (?<name> [_A-Za-z]\w* )
+                (?<name> $var_name )
             )
-            (?= (?<next> .{0,3} ) )
+            (?= (?<next> $any_3 ) )
         }x,
 
-        qq => qr{
-            $qq 
-                (?>
-                    [^$qq\\]+ | \.
-                )*
-            $qq 
+        text => qr{
+            (?{ say "B |$`<$&>$'|" })
+
+            # Not any (common) form of quotes.
+            (?<unquoted>
+                (?:
+                    (?!
+                        $qq
+                        |
+                        $q
+                        |
+                        \b q[qrw]? \b
+                    ) .
+                )*+
+            )
 
             |
 
-            \bqq\b \s* \(
-                (?>
-                    [^\\]+ | \.
-                )*
-            \)
-        },
+            # Otherwise, some form of quotes.
+            # Figure out which to decide whether
+            # to keep %h as %h or expand.
 
-        q => qr{
-            $q 
-                (?>
-                    [^$q\\]+ | \.
-                )*
-            $q 
+            # Double quotes.
+            $qq
+                (?<quoted>
+                    (?:
+                        [^$qq\\]* | \.
+                    )*+
+                )
+            $qq
+
+            |
+
+            # Single quotes.
+            # (no capture to skip it).
+            $q
+                (?:
+                    [^$q\\]* | \.
+                )*+
+            $q
+
+            |
+
+            # qq and qr operators.
+            \b q[qr] \b \s* (?<quoted>
+                (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
+            )
+
+            |
+
+            # q and qw operators.
+            # (no capture to skip it).
+            \b qw? \b \s* (?:
+                (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
+            )
+
+            # Sub pattern definitions.
+            (?(DEFINE)
+                (?<PARENS>
+                    \(
+                        (?:
+                            [^()\\]*+ | \. | (?&PARENS)
+                        )*+
+                    \)
+                )
+                (?<CURLY>
+                    \{
+                        (?:
+                            [^{}\\]*+ | \. | (?&CURLY)
+                        )*+
+                    \}
+                )
+                (?<SQUARE>
+                    \[
+                        (?:
+                            [^\[\]\\]*+ | \. | (?&SQUARE)
+                        )*+
+                    \]
+                )
+                (?<ANGLE>
+                    <
+                        (?:
+                            [^<>\\]*+ | \. | (?&ANGLE)
+                        )*+
+                    >
+                )
+            )
         },
 
     }
@@ -638,25 +720,25 @@ sub _to_peek {
     my $next  = $match{next}  // "";
 
     my $is_curly = '{'; # To make my editor happy.
-    
+
     # Find the true variable with sigil.
     if ( $next =~ / ^ \[ /x ) { # Array ref.
-        $var = "\@$name"; 
+        $var = "\@$name";
     }
     elsif ( $next =~ / ^ $is_curly /x ) { # Hash ref.
-        $var = "\%$name"; 
+        $var = "\%$name";
     }
-    
+
     my $ref = ref $repl->{peek_all}{$var};
     my $val = "\$repl->{peek_all}{qq(\Q$var\E)}";
-    
+
     if ($repl->debug) {
         say "var:   $var";
         say "sigil: $sigil";
         say "next:  $next";
         say "ref:   $ref";
     }
-    
+
     if ($ref eq 'REF') {
         $val = "\${$val}";
     }
@@ -673,7 +755,7 @@ sub _to_peek {
         $repl->_show_error( "Unsupported type '$ref' (should not be here!!!)");
         return $var;
     }
-    
+
     $val;
 }
 
@@ -727,7 +809,7 @@ sub _repl_step {
 
     $input = $repl->_apply_peeks($input);
 
-    say "input_after_step=[$input]" if $repl->debug;    
+    say "input_after_step=[$input]" if $repl->debug;
 
     eval $input;
 }
@@ -741,7 +823,7 @@ This module has rich, DWIM tab completion support:
  - Press TAB with no input to view commands and available variables in the current scope.
  - Press TAB after an arrow ("->") to auto append either a "{" or "[" or "(".
     This depends on the type of variable before it.
- - Press TAB after a hash (or hash object) to list available keys. 
+ - Press TAB after a hash (or hash object) to list available keys.
  - Press TAB anywhere else to list variables.
 
 =cut
@@ -1321,14 +1403,14 @@ This piece of code demonstrates the problem with using c<eval run>.
      my ($code) = @_;
      $code->();
  }
- 
+
  Func( sub{
      my $v2 = 222;
-     
+
      # This causes issues.
      use Runtime::Debugger -nofilter;
      eval run;
- 
+
      # Whereas, this one uses a source filter and works.
      use Runtime::Debugger;
  });
