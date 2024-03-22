@@ -18,11 +18,11 @@ USAGE
 
 Start the debugger:
 
-    perl -MRuntime::Debugger -E 'eval run'
+    perl -MRuntime::Debugger -e 'repl'
 
 Same, but with some variables to play with:
 
-    perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; eval run; say $@'
+    perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; repl; say $@'
 
 SUPPORT AND DOCUMENTATION
 
@@ -32,8 +32,7 @@ perldoc command.
     perldoc Runtime::Debugger
 
 You can also look for information at:
-
-    https://metacpan.org/pod/Runtime::Debugger
+   https://metacpan.org/pod/Runtime::Debugger
     https://github.com/poti1/runtime-debugger
 
 LICENSE AND COPYRIGHT
