@@ -13,6 +13,7 @@ use e;
 $ENV{RUNTIME_DEBUGGER_DEBUG} = 0;
 
 {
+
     package A;
     sub get { "got method" }
 }
@@ -25,48 +26,48 @@ sub run_suite {
     my $hr = { a => 1, b => 2 };
     my %h  = ( a => 1, b => 2 );
     my @a  = ( 1, 2 );
-    my $o  = bless{ cat => 5 }, "A";
+    my $o  = bless { cat => 5 }, "A";
 
     my $repl = Runtime::Debugger->_init;
 
     my @cases = (
-   
+
         # Scalar.
         {
-            name  => "Print scalar",
-            input => 'p $s',
+            name     => "Print scalar",
+            input    => 'p $s',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$s)}}',
-                vars_after    => sub {
+                vars_after  => sub {
                     is $s, 777, shift;
                 },
             },
         },
         {
-            name  => "Get scalar",
-            input => '$s',
+            name     => "Get scalar",
+            input    => '$s',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$s)}}',
                 eval_result => 777,
-                vars_after    => sub {
+                vars_after  => sub {
                     is $s, 777, shift;
                 },
             },
         },
         {
-            name  => "Set scalar",
-            input => '$s = 555',
+            name     => "Set scalar",
+            input    => '$s = 555',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$s)}} = 555',
                 eval_result => 555,
-                vars_after    => sub {
+                vars_after  => sub {
                     is $s, 555, shift;
                 },
             },
         },
         {
-            name  => "Get scalar again",
-            input => '$s',
+            name     => "Get scalar again",
+            input    => '$s',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$s)}}',
                 eval_result => 555,
@@ -81,8 +82,8 @@ sub run_suite {
 
         # Array reference.
         {
-            name  => "Print array reference",
-            input => 'p $ar->[1]',
+            name     => "Print array reference",
+            input    => 'p $ar->[1]',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$ar)}}->[1]',
                 vars_after  => sub {
@@ -91,8 +92,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get array reference",
-            input => '$ar->[1]',
+            name     => "Get array reference",
+            input    => '$ar->[1]',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$ar)}}->[1]',
                 eval_result => 2,
@@ -102,10 +103,11 @@ sub run_suite {
             },
         },
         {
-            name  => "Set array reference",
-            input => '$ar->[1] = "my_ar_1"',
+            name     => "Set array reference",
+            input    => '$ar->[1] = "my_ar_1"',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$ar)}}->[1] = "my_ar_1"',
+                apply_peeks =>
+                  '${$repl->{peek_all}{qq(\$ar)}}->[1] = "my_ar_1"',
                 eval_result => "my_ar_1",
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 'my_ar_1' ], shift;
@@ -113,8 +115,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get array reference again",
-            input => '$ar->[1]',
+            name     => "Get array reference again",
+            input    => '$ar->[1]',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$ar)}}->[1]',
                 eval_result => "my_ar_1",
@@ -129,8 +131,8 @@ sub run_suite {
 
         # Hash reference.
         {
-            name  => "Print hash reference",
-            input => 'p $hr->{b}',
+            name     => "Print hash reference",
+            input    => 'p $hr->{b}',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$hr)}}->{b}',
                 vars_after  => sub {
@@ -139,8 +141,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get hash reference",
-            input => '$hr->{b}',
+            name     => "Get hash reference",
+            input    => '$hr->{b}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$hr)}}->{b}',
                 eval_result => 2,
@@ -150,10 +152,11 @@ sub run_suite {
             },
         },
         {
-            name  => "Set hash reference",
-            input => '$hr->{b} = "my_hr_b"',
+            name     => "Set hash reference",
+            input    => '$hr->{b} = "my_hr_b"',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$hr)}}->{b} = "my_hr_b"',
+                apply_peeks =>
+                  '${$repl->{peek_all}{qq(\$hr)}}->{b} = "my_hr_b"',
                 eval_result => "my_hr_b",
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 'my_hr_b' }, shift;
@@ -161,8 +164,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get hash reference again",
-            input => '$hr->{b}',
+            name     => "Get hash reference again",
+            input    => '$hr->{b}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$hr)}}->{b}',
                 eval_result => "my_hr_b",
@@ -177,8 +180,8 @@ sub run_suite {
 
         # Object.
         {
-            name  => "Print object",
-            input => 'p $o->{cat}',
+            name     => "Print object",
+            input    => 'p $o->{cat}',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->{cat}',
                 vars_after  => sub {
@@ -187,8 +190,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get object",
-            input => '$o->{cat}',
+            name     => "Get object",
+            input    => '$o->{cat}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->{cat}',
                 eval_result => 5,
@@ -198,10 +201,11 @@ sub run_suite {
             },
         },
         {
-            name  => "Set object",
-            input => '$o->{cat} = "my_o_cat"',
+            name     => "Set object",
+            input    => '$o->{cat} = "my_o_cat"',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->{cat} = "my_o_cat"',
+                apply_peeks =>
+                  '${$repl->{peek_all}{qq(\$o)}}->{cat} = "my_o_cat"',
                 eval_result => "my_o_cat",
                 vars_after  => sub {
                     is $o->{cat}, 'my_o_cat', shift;
@@ -209,8 +213,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get object again",
-            input => '$o->{cat}',
+            name     => "Get object again",
+            input    => '$o->{cat}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->{cat}',
                 eval_result => "my_o_cat",
@@ -223,8 +227,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Print object method",
-            input => 'p $o->get',
+            name     => "Print object method",
+            input    => 'p $o->get',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->get',
                 vars_after  => sub {
@@ -233,8 +237,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Print object method (paren)",
-            input => 'p $o->get()',
+            name     => "Print object method (paren)",
+            input    => 'p $o->get()',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->get()',
                 vars_after  => sub {
@@ -243,8 +247,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get object method",
-            input => '$o->get',
+            name     => "Get object method",
+            input    => '$o->get',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->get',
                 eval_result => "got method",
@@ -254,8 +258,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get object method (paren)",
-            input => '$o->get()',
+            name     => "Get object method (paren)",
+            input    => '$o->get()',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->get()',
                 eval_result => "got method",
@@ -267,8 +271,8 @@ sub run_suite {
 
         # Array.
         {
-            name  => "Print array element",
-            input => 'p $a[1]',
+            name     => "Print array element",
+            input    => 'p $a[1]',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\@a)}}[1]',
                 vars_after  => sub {
@@ -277,8 +281,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get array element",
-            input => '$a[1]',
+            name     => "Get array element",
+            input    => '$a[1]',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1]',
                 eval_result => 2,
@@ -288,8 +292,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Set array element",
-            input => '$a[1] = "my_a_1"',
+            name     => "Set array element",
+            input    => '$a[1] = "my_a_1"',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1] = "my_a_1"',
                 eval_result => "my_a_1",
@@ -299,8 +303,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get array element again",
-            input => '$a[1]',
+            name     => "Get array element again",
+            input    => '$a[1]',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1]',
                 eval_result => "my_a_1",
@@ -313,18 +317,18 @@ sub run_suite {
             },
         },
         {
-            name  => "Print array",
-            input => 'p @a',
+            name     => "Print array",
+            input    => 'p \@a',
             expected => {
-                apply_peeks => 'p @{$repl->{peek_all}{qq(\@a)}}',
+                apply_peeks => 'p \@{$repl->{peek_all}{qq(\@a)}}',
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
                 },
             },
         },
         {
-            name  => "Join array",
-            input => 'join " ", @a',
+            name     => "Join array",
+            input    => 'join " ", @a',
             expected => {
                 apply_peeks => 'join " ", @{$repl->{peek_all}{qq(\@a)}}',
                 eval_result => "1 2",
@@ -336,8 +340,8 @@ sub run_suite {
 
         # Hash.
         {
-            name  => "Print hash element",
-            input => 'p $h{b}',
+            name     => "Print hash element",
+            input    => 'p $h{b}',
             expected => {
                 apply_peeks => 'p ${$repl->{peek_all}{qq(\%h)}}{b}',
                 vars_after  => sub {
@@ -346,8 +350,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get hash element",
-            input => '$h{b}',
+            name     => "Get hash element",
+            input    => '$h{b}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b}',
                 eval_result => 2,
@@ -357,8 +361,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Set hash element",
-            input => '$h{b} = "my_h_b"',
+            name     => "Set hash element",
+            input    => '$h{b} = "my_h_b"',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b} = "my_h_b"',
                 eval_result => "my_h_b",
@@ -368,8 +372,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Get hash element again",
-            input => '$h{b}',
+            name     => "Get hash element again",
+            input    => '$h{b}',
             expected => {
                 apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b}',
                 eval_result => "my_h_b",
@@ -382,20 +386,22 @@ sub run_suite {
             },
         },
         {
-            name  => "Get hash",
-            input => 'say for sort keys %h',
+            name     => "Get hash",
+            input    => 'say for sort keys %h',
             expected => {
-                apply_peeks => 'say for sort keys %{$repl->{peek_all}{qq(\%h)}}',
-                vars_after  => sub {
+                apply_peeks =>
+                  'say for sort keys %{$repl->{peek_all}{qq(\%h)}}',
+                vars_after => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
                 },
             },
         },
         {
-            name  => "Join hash key",
-            input => 'join " ", sort keys %h',
+            name     => "Join hash key",
+            input    => 'join " ", sort keys %h',
             expected => {
-                apply_peeks => 'join " ", sort keys %{$repl->{peek_all}{qq(\%h)}}',
+                apply_peeks =>
+                  'join " ", sort keys %{$repl->{peek_all}{qq(\%h)}}',
                 eval_result => "a b",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -409,19 +415,19 @@ sub run_suite {
 
         # Quoted: "
         {
-            name  => "Double quoted scalar",
-            input => '"$s"',
+            name     => "Double quoted scalar",
+            input    => '"$s"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}"',
                 eval_result => "777",
-                vars_after    => sub {
+                vars_after  => sub {
                     is $s, 777, shift;
                 },
             },
         },
         {
-            name  => "Double quoted array ref",
-            input => '"$ar->[1]"',
+            name     => "Double quoted array ref",
+            input    => '"$ar->[1]"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$ar)}}->[1]"',
                 eval_result => "2",
@@ -431,8 +437,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted hash ref",
-            input => '"$hr->{b}"',
+            name     => "Double quoted hash ref",
+            input    => '"$hr->{b}"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$hr)}}->{b}"',
                 eval_result => 2,
@@ -442,8 +448,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted object key",
-            input => '"$o->{cat}"',
+            name     => "Double quoted object key",
+            input    => '"$o->{cat}"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->{cat}"',
                 eval_result => 5,
@@ -453,8 +459,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted object method",
-            input => '"$o->get"',
+            name     => "Double quoted object method",
+            input    => '"$o->get"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->get"',
                 eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
@@ -464,20 +470,20 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted scalar with fake method",
-            input => '"$s->get"',
+            name     => "Double quoted scalar with fake method",
+            input    => '"$s->get"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}->get"',
                 eval_result => "777->get",
                 vars_after  => sub {
-                    is $s, 777, shift;
-                    is $o->{cat}, 5, shift;
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
                 },
             },
         },
         {
-            name  => "Double quoted array",
-            input => '"@a"',
+            name     => "Double quoted array",
+            input    => '"@a"',
             expected => {
                 apply_peeks => '"@{$repl->{peek_all}{qq(\@a)}}"',
                 eval_result => "1 2",
@@ -487,8 +493,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quotes array element",
-            input => '"$a[1]"',
+            name     => "Double quotes array element",
+            input    => '"$a[1]"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\@a)}}[1]"',
                 eval_result => "2",
@@ -498,8 +504,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quotes array elements",
-            input => 'say "@a[1,2]"',
+            name     => "Double quotes array elements",
+            input    => 'say "@a[1,2]"',
             expected => {
                 apply_peeks => 'say "@{$repl->{peek_all}{qq(\@a)}}[1,2]"',
                 vars_after  => sub {
@@ -508,8 +514,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted hash",
-            input => '"%h"',
+            name     => "Double quoted hash",
+            input    => '"%h"',
             expected => {
                 apply_peeks => '"%h"',
                 eval_result => "%h",
@@ -519,8 +525,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted hash key",
-            input => '"$h{b}"',
+            name     => "Double quoted hash key",
+            input    => '"$h{b}"',
             expected => {
                 apply_peeks => '"${$repl->{peek_all}{qq(\%h)}}{b}"',
                 eval_result => "2",
@@ -530,8 +536,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Double quoted hash keys",
-            input => '"@h{qw( a b )}"',
+            name     => "Double quoted hash keys",
+            input    => '"@h{qw( a b )}"',
             expected => {
                 apply_peeks => '"@{$repl->{peek_all}{qq(\%h)}}{qw( a b )}"',
                 eval_result => "1 2",
@@ -543,19 +549,19 @@ sub run_suite {
 
         # Quoted: '
         {
-            name  => "Single quoted scalar",
-            input => q('$s'),
+            name     => "Single quoted scalar",
+            input    => q('$s'),
             expected => {
                 apply_peeks => q('$s'),
                 eval_result => q($s),
-                vars_after    => sub {
+                vars_after  => sub {
                     is $s, 777, shift;
                 },
             },
         },
         {
-            name  => "Single quoted array ref",
-            input => q('$ar->[1]'),
+            name     => "Single quoted array ref",
+            input    => q('$ar->[1]'),
             expected => {
                 apply_peeks => q('$ar->[1]'),
                 eval_result => q($ar->[1]),
@@ -565,8 +571,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted hash ref",
-            input => q('$hr->{b}'),
+            name     => "Single quoted hash ref",
+            input    => q('$hr->{b}'),
             expected => {
                 apply_peeks => q('$hr->{b}'),
                 eval_result => q($hr->{b}),
@@ -576,8 +582,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted object key",
-            input => q('$o->{cat}'),
+            name     => "Single quoted object key",
+            input    => q('$o->{cat}'),
             expected => {
                 apply_peeks => q('$o->{cat}'),
                 eval_result => q($o->{cat}),
@@ -587,8 +593,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted object method",
-            input => q('$o->get'),
+            name     => "Single quoted object method",
+            input    => q('$o->get'),
             expected => {
                 apply_peeks => q('$o->get'),
                 eval_result => q($o->get),
@@ -598,20 +604,20 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted scalar with fake method",
-            input => q('$s->get'),
+            name     => "Single quoted scalar with fake method",
+            input    => q('$s->get'),
             expected => {
                 apply_peeks => q('$s->get'),
                 eval_result => q($s->get),
                 vars_after  => sub {
-                    is $s, 777, shift;
-                    is $o->{cat}, 5, shift;
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
                 },
             },
         },
         {
-            name  => "Single quoted array",
-            input => q('@a'),
+            name     => "Single quoted array",
+            input    => q('@a'),
             expected => {
                 apply_peeks => q('@a'),
                 eval_result => q(@a),
@@ -621,8 +627,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quotes array element",
-            input => q('$a[1]'),
+            name     => "Single quotes array element",
+            input    => q('$a[1]'),
             expected => {
                 apply_peeks => q('$a[1]'),
                 eval_result => q($a[1]),
@@ -632,8 +638,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quotes array elements",
-            input => q('@a[1,2]'),
+            name     => "Single quotes array elements",
+            input    => q('@a[1,2]'),
             expected => {
                 apply_peeks => q('@a[1,2]'),
                 eval_result => q(@a[1,2]),
@@ -643,8 +649,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted hash",
-            input => q('%h'),
+            name     => "Single quoted hash",
+            input    => q('%h'),
             expected => {
                 apply_peeks => q('%h'),
                 eval_result => q(%h),
@@ -654,8 +660,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted hash key",
-            input => q('$h{b}'),
+            name     => "Single quoted hash key",
+            input    => q('$h{b}'),
             expected => {
                 apply_peeks => q('$h{b}'),
                 eval_result => q($h{b}),
@@ -665,8 +671,8 @@ sub run_suite {
             },
         },
         {
-            name  => "Single quoted hash keys",
-            input => q('@h{qw( a b )}'),
+            name     => "Single quoted hash keys",
+            input    => q('@h{qw( a b )}'),
             expected => {
                 apply_peeks => q('@h{qw( a b )}'),
                 eval_result => q(@h{qw( a b )}),
@@ -675,7 +681,6 @@ sub run_suite {
                 },
             },
         },
-
 
         # Quoted: qq
 
@@ -688,43 +693,41 @@ sub run_suite {
         # Quoted: Mixed
 
     );
-   
+
     for my $case ( @cases ) {
-        pass("--- $case->{name} ---");
+        pass( "--- $case->{name} ---" );
 
         # Check if peek data is properly applied.
-        my $applied = $repl->_apply_peeks($case->{input});
-        last unless is(
+        my $applied = $repl->_apply_peeks( $case->{input} );
+        last
+          unless is(
             $applied,
             $case->{expected}{apply_peeks},
             "$case->{name} - apply peeks",
-        );
+          );
 
         # Check result of eval.
         if ( $case->{expected}{eval_result} ) {
             my $expected = $case->{expected}{eval_result};
             my $actual   = eval $applied;
-            if ( ref($expected) eq ref(qr//) ){
-                last unless like(
-                    $actual,
-                    $expected,
+            if ( ref( $expected ) eq ref( qr// ) ) {
+                last
+                  unless like( $actual, $expected,
                     "$case->{name} - eval result (regex)",
-                );
+                  );
             }
             else {
-                last unless is(
-                    $actual,
-                    $expected,
-                    "$case->{name} - eval result",
-                );
+                last
+                  unless is( $actual, $expected,
+                    "$case->{name} - eval result", );
             }
         }
 
         # Check variables are actually set.
         if ( $case->{expected}{vars_after} ) {
-            last unless $case->{expected}{vars_after}->(
-                "$case->{name} - vars after"
-            );
+            last
+              unless $case->{expected}{vars_after}
+              ->( "$case->{name} - vars after" );
         }
 
         # Cleanup/reset variables.
@@ -735,8 +738,8 @@ sub run_suite {
 }
 
 sub title {
-    my ($scenario) = @_;
-    pass("--- --- $scenario --- ---");
+    my ( $scenario ) = @_;
+    pass( "--- --- $scenario --- ---" );
 }
 
 ################################
@@ -758,6 +761,7 @@ sub {
     say "";
     title "Code Reference";
     run_suite();
-}->();
+  }
+  ->();
 
 

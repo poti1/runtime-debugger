@@ -21,7 +21,7 @@ use 5.012;
 use strict;
 use warnings;
 use Data::Dumper;
-use Data::Printer;
+use Data::Printer use_prototypes => 0;
 use Term::ReadLine;
 use Term::ANSIColor qw( colored );
 use List::Util      qw( uniq );
@@ -33,7 +33,7 @@ use parent          qw( Exporter );
 use subs            qw( d );
 
 our $VERSION = '0.15';
-our @EXPORT  = qw( run repl np d p );
+our @EXPORT  = qw( run repl d np p );
 
 =head1 NAME
 
@@ -56,6 +56,10 @@ Start the debugger (ONLY on the commandline):
 Same, but with some variables to play with:
 
     perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; repl; say $@'
+
+Current test command: 
+
+    RUNTIME_DEBUGGER_DEBUG=1 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; say "$v->get"; repl'
 
 =cut
 
@@ -372,13 +376,13 @@ sub repl {
     my $repl = __PACKAGE__->_init;
 
     local $@;
-    eval {          # Catch loop exit.
+    eval {    # Catch loop exit.
         while ( 1 ) {
             $repl->_repl_step;
-            $repl->_show_error($@) if $@;
+            $repl->_show_error( $@ ) if $@;
         }
     };
-    $repl->_show_error($@) if $@;
+    $repl->_show_error( $@ ) if $@;
 }
 
 # Initialize
@@ -445,8 +449,9 @@ sub _set_peeks {
     # CAUTION: avoid having the same name for a lexical and global
     # variable since the last variable declared would "win".
 
-    my $levels       = $self->_calc_scope;    # How many levels until at "$repl=" or main.
-    my $peek_my      = peek_my( $levels );
+    my $levels =
+      $self->_calc_scope;    # How many levels until at "$repl=" or main.
+    my $peek_my = peek_my( $levels );
 
     # Add a reference to the repl.
     $peek_my->{'$repl'} = \$self;
@@ -466,7 +471,7 @@ sub _set_peeks {
 }
 
 sub _calc_scope {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
     my $scope = 0;
     my $pkg   = __PACKAGE__;
@@ -474,10 +479,7 @@ sub _calc_scope {
 
     # Find the first scope level outside
     # this package.
-    1 while (
-        ($caller = caller(++$scope)),
-        $caller and $caller eq $pkg
-    );
+    1 while ( ( $caller = caller( ++$scope ) ), $caller and $caller eq $pkg );
     say "scope: $scope" if $self->debug;
 
     $scope;
@@ -629,7 +631,7 @@ Might be transformed into:
 =cut
 
 sub _apply_peeks {
-    my ($self, $code) = @_;
+    my ( $self, $code ) = @_;
     my $r = $self->_define_regex;
 
     say "code:  [$code]" if $self->debug;
@@ -656,14 +658,14 @@ sub _apply_peeks {
 }
 
 sub _define_regex {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
     # Some are mainly defined here just to
     # keep my editor code folding functional.
-    my $var_name  = qr{ [_A-Za-z]\w* }x;
-    my $any_3     = qr{ .{0,3} }x;
-    my $qq        = '"';
-    my $q         = "'";
+    my $var_name = qr{ [_A-Za-z]\w* }x;
+    my $any_3    = qr{ .{0,3} }x;
+    my $qq       = '"';
+    my $q        = "'";
 
     {
 
@@ -784,50 +786,50 @@ sub _define_regex {
             )
         }x,
 
-    }
+    };
 }
 
 sub _to_peek {
-    my ($repl,%match) = @_;
+    my ( $repl, %match ) = @_;
     my $var   = $match{var};
     my $sigil = $match{sigil};
     my $name  = $match{name};
-    my $next  = $match{next}  // "";
+    my $next  = $match{next} // "";
 
-    my $is_curly = '{'; # To make my editor happy.
+    my $is_curly = '{';    # To make my editor happy.
 
     # Find the true variable with sigil.
-    if ( $next =~ / ^ \[ /x ) { # Array ref.
+    if ( $next =~ / ^ \[ /x ) {    # Array ref.
         $var = "\@$name";
     }
-    elsif ( $next =~ / ^ $is_curly /x ) { # Hash ref.
+    elsif ( $next =~ / ^ $is_curly /x ) {    # Hash ref.
         $var = "\%$name";
     }
 
     my $ref = ref $repl->{peek_all}{$var};
     my $val = "\$repl->{peek_all}{qq(\Q$var\E)}";
 
-    if ($repl->debug) {
+    if ( $repl->debug ) {
         say "var:   $var";
         say "sigil: $sigil";
         say "next:  $next";
         say "ref:   $ref";
     }
 
-    if ($ref eq 'REF') {
+    if ( $ref eq 'REF' ) {
         $val = "\${$val}";
     }
-    elsif ($ref eq 'SCALAR') {
+    elsif ( $ref eq 'SCALAR' ) {
         $val = "\${$val}";
     }
-    elsif ($ref eq 'ARRAY') {
+    elsif ( $ref eq 'ARRAY' ) {
         $val = "${sigil}{$val}";
     }
-    elsif ($ref eq 'HASH') {
+    elsif ( $ref eq 'HASH' ) {
         $val = "${sigil}{$val}";
     }
     else {
-        $repl->_show_error( "Unsupported type '$ref' (should not be here!!!)");
+        $repl->_show_error( "Unsupported type '$ref' (should not be here!!!)" );
         return $var;
     }
 
@@ -880,7 +882,7 @@ sub _repl_step {
 
     $repl->_exit( $input ) if $input eq 'q';
 
-    $input = $repl->_apply_peeks($input);
+    $input = $repl->_apply_peeks( $input );
 
     say "input_after_step=[$input]" if $repl->debug;
 
@@ -1062,7 +1064,7 @@ sub _get_object_functions {
 
 sub _is_hash_match {
     my ( $self ) = @_;
-    my $is_curly = '}'; # To make my editor happy.
+    my $is_curly = '}';                # To make my editor happy.
 
     qr{
         (
@@ -1181,12 +1183,12 @@ sub _define_help {
 
  $class $version
 
- <TAB>       - Show options.
- help        - Show this help section.
- hist [N=20] - Show last N commands.
- p VAR       - Data printer.
- d DATA [#N] - Data dumper (with optional depth).
- q           - Quit debugger.
+ <TAB>      - Show options.
+ help       - Show this help section.
+ hist [N=5] - Show last N commands.
+ d DATA     - Data dumper.
+ p DATA     - Data printer (colored).
+ q          - Quit debugger.
 HELP
 }
 
@@ -1334,11 +1336,11 @@ Data::Dumper::Dump anything.
 
 sub d {
     my $d = Data::Dumper
-        ->new( \@_ )
-        ->Indent( 1 )
-        ->Sortkeys( 1 )
-        ->Terse( 1 )
-        ->Useqq( 1 );
+      ->new( \@_ )
+      ->Indent( 1 )
+      ->Sortkeys( 1 )
+      ->Terse( 1 )
+      ->Useqq( 1 );
 
     return $d->Dump if wantarray;
     print $d->Dump;
@@ -1346,7 +1348,9 @@ sub d {
 
 =head2 Data::Printer
 
-You can use "p" as a print command which can show a simple or complex data structure with colors.
+You can use "p" as a print command which
+can show a simple or complex data structure
+with colors.
 
 =cut
 
