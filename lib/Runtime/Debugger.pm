@@ -30,7 +30,6 @@ use Scalar::Util    qw( blessed reftype );
 use Class::Tiny     qw( term attr debug );
 use feature         qw( say );
 use parent          qw( Exporter );
-use subs            qw( d );
 
 our $VERSION = '0.15';
 our @EXPORT  = qw( run repl d np p );
