@@ -5,7 +5,7 @@ package MyTest;
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 73;
+use Test::More tests => 1875;
 use Runtime::Debugger;
 use e;
 
@@ -37,7 +37,7 @@ sub run_suite {
             name     => "Print scalar",
             input    => 'p $s',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$s)}}',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$s)}}',
                 vars_after  => sub {
                     is $s, 777, shift;
                 },
@@ -47,7 +47,7 @@ sub run_suite {
             name     => "Get scalar",
             input    => '$s',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$s)}}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$s)}}',
                 eval_result => 777,
                 vars_after  => sub {
                     is $s, 777, shift;
@@ -58,7 +58,7 @@ sub run_suite {
             name     => "Set scalar",
             input    => '$s = 555',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$s)}} = 555',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$s)}} = 555',
                 eval_result => 555,
                 vars_after  => sub {
                     is $s, 555, shift;
@@ -69,7 +69,7 @@ sub run_suite {
             name     => "Get scalar again",
             input    => '$s',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$s)}}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$s)}}',
                 eval_result => 555,
                 vars_after  => sub {
                     is $s, 555, shift;
@@ -85,7 +85,7 @@ sub run_suite {
             name     => "Print array reference",
             input    => 'p $ar->[1]',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$ar)}}->[1]',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]',
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 2 ], shift;
                 },
@@ -95,7 +95,7 @@ sub run_suite {
             name     => "Get array reference",
             input    => '$ar->[1]',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$ar)}}->[1]',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]',
                 eval_result => 2,
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 2 ], shift;
@@ -107,7 +107,7 @@ sub run_suite {
             input    => '$ar->[1] = "my_ar_1"',
             expected => {
                 apply_peeks =>
-                  '${$repl->{peek_all}{qq(\$ar)}}->[1] = "my_ar_1"',
+                  '${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1] = "my_ar_1"',
                 eval_result => "my_ar_1",
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 'my_ar_1' ], shift;
@@ -118,7 +118,7 @@ sub run_suite {
             name     => "Get array reference again",
             input    => '$ar->[1]',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$ar)}}->[1]',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]',
                 eval_result => "my_ar_1",
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 'my_ar_1' ], shift;
@@ -134,7 +134,7 @@ sub run_suite {
             name     => "Print hash reference",
             input    => 'p $hr->{b}',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$hr)}}->{b}',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}',
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 2 }, shift;
                 },
@@ -144,7 +144,7 @@ sub run_suite {
             name     => "Get hash reference",
             input    => '$hr->{b}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$hr)}}->{b}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}',
                 eval_result => 2,
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 2 }, shift;
@@ -156,7 +156,7 @@ sub run_suite {
             input    => '$hr->{b} = "my_hr_b"',
             expected => {
                 apply_peeks =>
-                  '${$repl->{peek_all}{qq(\$hr)}}->{b} = "my_hr_b"',
+                  '${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b} = "my_hr_b"',
                 eval_result => "my_hr_b",
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 'my_hr_b' }, shift;
@@ -167,7 +167,7 @@ sub run_suite {
             name     => "Get hash reference again",
             input    => '$hr->{b}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$hr)}}->{b}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}',
                 eval_result => "my_hr_b",
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 'my_hr_b' }, shift;
@@ -183,7 +183,7 @@ sub run_suite {
             name     => "Print object",
             input    => 'p $o->{cat}',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->{cat}',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}',
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -193,7 +193,7 @@ sub run_suite {
             name     => "Get object",
             input    => '$o->{cat}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->{cat}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}',
                 eval_result => 5,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -205,7 +205,7 @@ sub run_suite {
             input    => '$o->{cat} = "my_o_cat"',
             expected => {
                 apply_peeks =>
-                  '${$repl->{peek_all}{qq(\$o)}}->{cat} = "my_o_cat"',
+                  '${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat} = "my_o_cat"',
                 eval_result => "my_o_cat",
                 vars_after  => sub {
                     is $o->{cat}, 'my_o_cat', shift;
@@ -216,7 +216,7 @@ sub run_suite {
             name     => "Get object again",
             input    => '$o->{cat}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->{cat}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}',
                 eval_result => "my_o_cat",
                 vars_after  => sub {
                     is $o->{cat}, 'my_o_cat', shift;
@@ -230,7 +230,7 @@ sub run_suite {
             name     => "Print object method",
             input    => 'p $o->get',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->get',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$o)}}->get',
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -240,7 +240,7 @@ sub run_suite {
             name     => "Print object method (paren)",
             input    => 'p $o->get()',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\$o)}}->get()',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\$o)}}->get()',
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -250,7 +250,7 @@ sub run_suite {
             name     => "Get object method",
             input    => '$o->get',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->get',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$o)}}->get',
                 eval_result => "got method",
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -261,7 +261,7 @@ sub run_suite {
             name     => "Get object method (paren)",
             input    => '$o->get()',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\$o)}}->get()',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\$o)}}->get()',
                 eval_result => "got method",
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -274,7 +274,7 @@ sub run_suite {
             name     => "Print array element",
             input    => 'p $a[1]',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\@a)}}[1]',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]',
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
                 },
@@ -284,7 +284,7 @@ sub run_suite {
             name     => "Get array element",
             input    => '$a[1]',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1]',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]',
                 eval_result => 2,
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
@@ -295,7 +295,8 @@ sub run_suite {
             name     => "Set array element",
             input    => '$a[1] = "my_a_1"',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1] = "my_a_1"',
+                apply_peeks =>
+                  '${$Runtime::Debugger::PEEKS{qq(\@a)}}[1] = "my_a_1"',
                 eval_result => "my_a_1",
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 'my_a_1' ], shift;
@@ -306,7 +307,7 @@ sub run_suite {
             name     => "Get array element again",
             input    => '$a[1]',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\@a)}}[1]',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]',
                 eval_result => "my_a_1",
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 'my_a_1' ], shift;
@@ -320,7 +321,7 @@ sub run_suite {
             name     => "Print array",
             input    => 'p \@a',
             expected => {
-                apply_peeks => 'p \@{$repl->{peek_all}{qq(\@a)}}',
+                apply_peeks => 'p \@{$Runtime::Debugger::PEEKS{qq(\@a)}}',
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
                 },
@@ -330,7 +331,8 @@ sub run_suite {
             name     => "Join array",
             input    => 'join " ", @a',
             expected => {
-                apply_peeks => 'join " ", @{$repl->{peek_all}{qq(\@a)}}',
+                apply_peeks =>
+                  'join " ", @{$Runtime::Debugger::PEEKS{qq(\@a)}}',
                 eval_result => "1 2",
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
@@ -343,7 +345,7 @@ sub run_suite {
             name     => "Print hash element",
             input    => 'p $h{b}',
             expected => {
-                apply_peeks => 'p ${$repl->{peek_all}{qq(\%h)}}{b}',
+                apply_peeks => 'p ${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}',
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
                 },
@@ -353,7 +355,7 @@ sub run_suite {
             name     => "Get hash element",
             input    => '$h{b}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}',
                 eval_result => 2,
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -364,7 +366,8 @@ sub run_suite {
             name     => "Set hash element",
             input    => '$h{b} = "my_h_b"',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b} = "my_h_b"',
+                apply_peeks =>
+                  '${$Runtime::Debugger::PEEKS{qq(\%h)}}{b} = "my_h_b"',
                 eval_result => "my_h_b",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 'my_h_b' }, shift;
@@ -375,7 +378,7 @@ sub run_suite {
             name     => "Get hash element again",
             input    => '$h{b}',
             expected => {
-                apply_peeks => '${$repl->{peek_all}{qq(\%h)}}{b}',
+                apply_peeks => '${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}',
                 eval_result => "my_h_b",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 'my_h_b' }, shift;
@@ -390,7 +393,7 @@ sub run_suite {
             input    => 'say for sort keys %h',
             expected => {
                 apply_peeks =>
-                  'say for sort keys %{$repl->{peek_all}{qq(\%h)}}',
+                  'say for sort keys %{$Runtime::Debugger::PEEKS{qq(\%h)}}',
                 vars_after => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
                 },
@@ -401,7 +404,7 @@ sub run_suite {
             input    => 'join " ", sort keys %h',
             expected => {
                 apply_peeks =>
-                  'join " ", sort keys %{$repl->{peek_all}{qq(\%h)}}',
+                  'join " ", sort keys %{$Runtime::Debugger::PEEKS{qq(\%h)}}',
                 eval_result => "a b",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -418,7 +421,7 @@ sub run_suite {
             name     => "Double quoted scalar",
             input    => '"$s"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$s)}}"',
                 eval_result => "777",
                 vars_after  => sub {
                     is $s, 777, shift;
@@ -429,7 +432,7 @@ sub run_suite {
             name     => "Double quoted array ref",
             input    => '"$ar->[1]"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$ar)}}->[1]"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]"',
                 eval_result => "2",
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 2 ], shift;
@@ -440,7 +443,7 @@ sub run_suite {
             name     => "Double quoted hash ref",
             input    => '"$hr->{b}"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$hr)}}->{b}"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}"',
                 eval_result => 2,
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 2 }, shift;
@@ -451,7 +454,7 @@ sub run_suite {
             name     => "Double quoted object key",
             input    => '"$o->{cat}"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->{cat}"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}"',
                 eval_result => 5,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -462,7 +465,7 @@ sub run_suite {
             name     => "Double quoted object method",
             input    => '"$o->get"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$o)}}->get"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$o)}}->get"',
                 eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -473,7 +476,7 @@ sub run_suite {
             name     => "Double quoted scalar with fake method",
             input    => '"$s->get"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\$s)}}->get"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$s)}}->get"',
                 eval_result => "777->get",
                 vars_after  => sub {
                     is $s,        777, shift;
@@ -485,7 +488,7 @@ sub run_suite {
             name     => "Double quoted array",
             input    => '"@a"',
             expected => {
-                apply_peeks => '"@{$repl->{peek_all}{qq(\@a)}}"',
+                apply_peeks => '"@{$Runtime::Debugger::PEEKS{qq(\@a)}}"',
                 eval_result => "1 2",
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
@@ -496,7 +499,7 @@ sub run_suite {
             name     => "Double quotes array element",
             input    => '"$a[1]"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\@a)}}[1]"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]"',
                 eval_result => "2",
                 vars_after  => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
@@ -507,8 +510,9 @@ sub run_suite {
             name     => "Double quotes array elements",
             input    => 'say "@a[1,2]"',
             expected => {
-                apply_peeks => 'say "@{$repl->{peek_all}{qq(\@a)}}[1,2]"',
-                vars_after  => sub {
+                apply_peeks =>
+                  'say "@{$Runtime::Debugger::PEEKS{qq(\@a)}}[1,2]"',
+                vars_after => sub {
                     is_deeply \@a, [ 1, 2 ], shift;
                 },
             },
@@ -528,7 +532,7 @@ sub run_suite {
             name     => "Double quoted hash key",
             input    => '"$h{b}"',
             expected => {
-                apply_peeks => '"${$repl->{peek_all}{qq(\%h)}}{b}"',
+                apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}"',
                 eval_result => "2",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -539,7 +543,8 @@ sub run_suite {
             name     => "Double quoted hash keys",
             input    => '"@h{qw( a b )}"',
             expected => {
-                apply_peeks => '"@{$repl->{peek_all}{qq(\%h)}}{qw( a b )}"',
+                apply_peeks =>
+                  '"@{$Runtime::Debugger::PEEKS{qq(\%h)}}{qw( a b )}"',
                 eval_result => "1 2",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -682,9 +687,1169 @@ sub run_suite {
             },
         },
 
-        # Quoted: qq
+        # Quoted: qq - parens
+        {
+            name     => "qq parens scalar",
+            input    => 'qq($s)',
+            expected => {
+                apply_peeks => 'qq(${$Runtime::Debugger::PEEKS{qq(\$s)}})',
+                eval_result => "777",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens array ref",
+            input    => 'qq($ar->[1])',
+            expected => {
+                apply_peeks =>
+                  'qq(${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1])',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens hash ref",
+            input    => 'qq($hr->{b})',
+            expected => {
+                apply_peeks =>
+                  'qq(${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b})',
+                eval_result => 2,
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens object key",
+            input    => 'qq($o->{cat})',
+            expected => {
+                apply_peeks =>
+                  'qq(${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat})',
+                eval_result => 5,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens object method",
+            input    => 'qq($o->get)',
+            expected => {
+                apply_peeks => 'qq(${$Runtime::Debugger::PEEKS{qq(\$o)}}->get)',
+                eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens scalar with fake method",
+            input    => 'qq($s->get)',
+            expected => {
+                apply_peeks => 'qq(${$Runtime::Debugger::PEEKS{qq(\$s)}}->get)',
+                eval_result => "777->get",
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens array",
+            input    => 'qq(@a)',
+            expected => {
+                apply_peeks => 'qq(@{$Runtime::Debugger::PEEKS{qq(\@a)}})',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens array element",
+            input    => 'qq($a[1])',
+            expected => {
+                apply_peeks => 'qq(${$Runtime::Debugger::PEEKS{qq(\@a)}}[1])',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens array elements",
+            input    => 'say qq(@a[1,2])',
+            expected => {
+                apply_peeks =>
+                  'say qq(@{$Runtime::Debugger::PEEKS{qq(\@a)}}[1,2])',
+                vars_after => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens hash",
+            input    => 'qq(%h)',
+            expected => {
+                apply_peeks => 'qq(%h)',
+                eval_result => "%h",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens hash key",
+            input    => 'qq($h{b})',
+            expected => {
+                apply_peeks => 'qq(${$Runtime::Debugger::PEEKS{qq(\%h)}}{b})',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq parens hash keys",
+            input    => 'qq(@h{qw( a b )})',
+            expected => {
+                apply_peeks =>
+                  'qq(@{$Runtime::Debugger::PEEKS{qq(\%h)}}{qw( a b )})',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
 
-        # Quoted: q
+        # Quoted: qq - curly
+        {
+            name     => "qq curly scalar",
+            input    => 'qq{$s}',
+            expected => {
+                apply_peeks => 'qq{${$Runtime::Debugger::PEEKS{qq(\$s)}}}',
+                eval_result => "777",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly array ref",
+            input    => 'qq{$ar->[1]}',
+            expected => {
+                apply_peeks =>
+                  'qq{${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]}',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly hash ref",
+            input    => 'qq{$hr->{b}}',
+            expected => {
+                apply_peeks =>
+                  'qq{${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}}',
+                eval_result => 2,
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly object key",
+            input    => 'qq{$o->{cat}}',
+            expected => {
+                apply_peeks =>
+                  'qq{${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}}',
+                eval_result => 5,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly object method",
+            input    => 'qq{$o->get}',
+            expected => {
+                apply_peeks => 'qq{${$Runtime::Debugger::PEEKS{qq(\$o)}}->get}',
+                eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly scalar with fake method",
+            input    => 'qq{$s->get}',
+            expected => {
+                apply_peeks => 'qq{${$Runtime::Debugger::PEEKS{qq(\$s)}}->get}',
+                eval_result => "777->get",
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly array",
+            input    => 'qq{@a}',
+            expected => {
+                apply_peeks => 'qq{@{$Runtime::Debugger::PEEKS{qq(\@a)}}}',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly array element",
+            input    => 'qq{$a[1]}',
+            expected => {
+                apply_peeks => 'qq{${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]}',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly array elements",
+            input    => 'say qq(@a[1,2]}',
+            expected => {
+                apply_peeks =>
+                  'say qq(@{$Runtime::Debugger::PEEKS{qq(\@a)}}[1,2]}',
+                vars_after => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly hash",
+            input    => 'qq{%h}',
+            expected => {
+                apply_peeks => 'qq{%h}',
+                eval_result => "%h",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly hash key",
+            input    => 'qq{$h{b}}',
+            expected => {
+                apply_peeks => 'qq{${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}}',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq curly hash keys",
+            input    => 'qq{@h{qw( a b )}}',
+            expected => {
+                apply_peeks =>
+                  'qq{@{$Runtime::Debugger::PEEKS{qq(\%h)}}{qw( a b )}}',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: qq - square
+        {
+            name     => "qq square scalar",
+            input    => 'qq[$s]',
+            expected => {
+                apply_peeks => 'qq[${$Runtime::Debugger::PEEKS{qq(\$s)}}]',
+                eval_result => "777",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square array ref",
+            input    => 'qq[$ar->[1]]',
+            expected => {
+                apply_peeks =>
+                  'qq[${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]]',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq square hash ref",
+            input    => 'qq[$hr->{b}]',
+            expected => {
+                apply_peeks =>
+                  'qq[${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{b}]',
+                eval_result => 2,
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square object key",
+            input    => 'qq[$o->{cat}]',
+            expected => {
+                apply_peeks =>
+                  'qq[${$Runtime::Debugger::PEEKS{qq(\$o)}}->{cat}]',
+                eval_result => 5,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square object method",
+            input    => 'qq[$o->get]',
+            expected => {
+                apply_peeks => 'qq[${$Runtime::Debugger::PEEKS{qq(\$o)}}->get]',
+                eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square scalar with fake method",
+            input    => 'qq[$s->get]',
+            expected => {
+                apply_peeks => 'qq[${$Runtime::Debugger::PEEKS{qq(\$s)}}->get]',
+                eval_result => "777->get",
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "qq square array",
+            input    => 'qq[@a]',
+            expected => {
+                apply_peeks => 'qq[@{$Runtime::Debugger::PEEKS{qq(\@a)}}]',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq square array element",
+            input    => 'qq[$a[1]]',
+            expected => {
+                apply_peeks => 'qq[${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]]',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq square array elements",
+            input    => 'say qq(@a[1,2]]',
+            expected => {
+                apply_peeks =>
+                  'say qq(@{$Runtime::Debugger::PEEKS{qq(\@a)}}[1,2]]',
+                vars_after => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq square hash",
+            input    => 'qq[%h]',
+            expected => {
+                apply_peeks => 'qq[%h]',
+                eval_result => "%h",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square hash key",
+            input    => 'qq[$h{b}]',
+            expected => {
+                apply_peeks => 'qq[${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}]',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq square hash keys",
+            input    => 'qq[@h{qw( a b )}]',
+            expected => {
+                apply_peeks =>
+                  'qq[@{$Runtime::Debugger::PEEKS{qq(\%h)}}{qw( a b )}]',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: qq - angle
+        {
+            name     => "qq angle scalar",
+            input    => 'qq<$s>',
+            expected => {
+                apply_peeks => 'qq<${$Runtime::Debugger::PEEKS{qq(\$s)}}>',
+                eval_result => "777",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle array ref (syntax error)",
+            input    => 'qq<$ar->[1]>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$ar)}}->[1]>',
+                eval_result => undef,
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle array ref",
+            input    => 'qq<$ar-\>[1]>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$ar)}}-\>[1]>',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle hash ref",
+            input    => 'qq<$hr-\>{b}>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$hr)}}-\>{b}>',
+                eval_result => 2,
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle object key",
+            input    => 'qq<$o-\>{cat}>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>{cat}>',
+                eval_result => 5,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle object method",
+            input    => 'qq<$o-\>get>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>get>',
+                eval_result => qr{ A=HASH \( 0x\w+ \) ->get }x,
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle scalar with fake method",
+            input    => 'qq<$s-\>get>',
+            expected => {
+                apply_peeks =>
+                  'qq<${$Runtime::Debugger::PEEKS{qq(\$s)}}-\>get>',
+                eval_result => "777->get",
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle array",
+            input    => 'qq<@a>',
+            expected => {
+                apply_peeks => 'qq<@{$Runtime::Debugger::PEEKS{qq(\@a)}}>',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle array element",
+            input    => 'qq<$a[1]>',
+            expected => {
+                apply_peeks => 'qq<${$Runtime::Debugger::PEEKS{qq(\@a)}}[1]>',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle array elements",
+            input    => 'say qq(@a[1,2]>',
+            expected => {
+                apply_peeks =>
+                  'say qq(@{$Runtime::Debugger::PEEKS{qq(\@a)}}[1,2]>',
+                vars_after => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle hash",
+            input    => 'qq<%h>',
+            expected => {
+                apply_peeks => 'qq<%h>',
+                eval_result => "%h",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle hash key",
+            input    => 'qq<$h{b}>',
+            expected => {
+                apply_peeks => 'qq<${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}>',
+                eval_result => "2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "qq angle hash keys",
+            input    => 'qq<@h{qw( a b )}>',
+            expected => {
+                apply_peeks =>
+                  'qq<@{$Runtime::Debugger::PEEKS{qq(\%h)}}{qw( a b )}>',
+                eval_result => "1 2",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: q - parens
+        {
+            name     => "q parens scalar",
+            input    => 'q($s)',
+            expected => {
+                apply_peeks => 'q($s)',
+                eval_result => '$s',
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens array ref",
+            input    => 'q($ar->[1])',
+            expected => {
+                apply_peeks => 'q($ar->[1])',
+                eval_result => '$ar->[1]',
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q parens hash ref",
+            input    => 'q($hr->{b})',
+            expected => {
+                apply_peeks => 'q($hr->{b})',
+                eval_result => '$hr->{b}',
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens object key",
+            input    => 'q($o->{cat})',
+            expected => {
+                apply_peeks => 'q($o->{cat})',
+                eval_result => '$o->{cat}',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens object method",
+            input    => 'q($o->get)',
+            expected => {
+                apply_peeks => 'q($o->get)',
+                eval_result => '$o->get',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens scalar with fake method",
+            input    => 'q($s->get)',
+            expected => {
+                apply_peeks => 'q($s->get)',
+                eval_result => '$s->get',
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "q parens array",
+            input    => 'q(@a)',
+            expected => {
+                apply_peeks => 'q(@a)',
+                eval_result => '@a',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q parens array element",
+            input    => 'q($a[1])',
+            expected => {
+                apply_peeks => 'q($a[1])',
+                eval_result => '$a[1]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q parens array elements",
+            input    => 'q(@a[1,2])',
+            expected => {
+                apply_peeks => 'q(@a[1,2])',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q parens array elements (print)",
+            input    => 'say q(@a[1,2])',
+            expected => {
+                apply_peeks => 'say q(@a[1,2])',
+                eval_result => '1',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q parens hash",
+            input    => 'q(%h)',
+            expected => {
+                apply_peeks => 'q(%h)',
+                eval_result => '%h',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens hash key",
+            input    => 'q($h{b})',
+            expected => {
+                apply_peeks => 'q($h{b})',
+                eval_result => '$h{b}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q parens hash keys",
+            input    => 'q(@h{qw( a b )})',
+            expected => {
+                apply_peeks => 'q(@h{qw( a b )})',
+                eval_result => '@h{qw( a b )}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: q - curly
+        {
+            name     => "q curly scalar",
+            input    => 'q{$s}',
+            expected => {
+                apply_peeks => 'q{$s}',
+                eval_result => '$s',
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly array ref",
+            input    => 'q{$ar->[1]}',
+            expected => {
+                apply_peeks => 'q{$ar->[1]}',
+                eval_result => '$ar->[1]',
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q curly hash ref",
+            input    => 'q{$hr->{b}}',
+            expected => {
+                apply_peeks => 'q{$hr->{b}}',
+                eval_result => '$hr->{b}',
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly object key",
+            input    => 'q{$o->{cat}}',
+            expected => {
+                apply_peeks => 'q{$o->{cat}}',
+                eval_result => '$o->{cat}',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly object method",
+            input    => 'q{$o->get}',
+            expected => {
+                apply_peeks => 'q{$o->get}',
+                eval_result => '$o->get',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly scalar with fake method",
+            input    => 'q{$s->get}',
+            expected => {
+                apply_peeks => 'q{$s->get}',
+                eval_result => '$s->get',
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "q curly array",
+            input    => 'q{@a}',
+            expected => {
+                apply_peeks => 'q{@a}',
+                eval_result => '@a',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q curly array element",
+            input    => 'q{$a[1]}',
+            expected => {
+                apply_peeks => 'q{$a[1]}',
+                eval_result => '$a[1]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q curly array elements (get)",
+            input    => 'q{@a[1,2]}',
+            expected => {
+                apply_peeks => 'q{@a[1,2]}',
+                eval_result => '@a[1,2]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q curly array elements (print)",
+            input    => 'say q{@a[1,2]}',
+            expected => {
+                apply_peeks => 'say q{@a[1,2]}',
+                eval_result => '1',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q curly hash",
+            input    => 'q{%h}',
+            expected => {
+                apply_peeks => 'q{%h}',
+                eval_result => '%h',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly hash key",
+            input    => 'q{$h{b}}',
+            expected => {
+                apply_peeks => 'q{$h{b}}',
+                eval_result => '$h{b}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q curly hash keys",
+            input    => 'q{@h{qw( a b )}}',
+            expected => {
+                apply_peeks => 'q{@h{qw( a b )}}',
+                eval_result => '@h{qw( a b )}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: q - square
+        {
+            name     => "q square scalar",
+            input    => 'q[$s]',
+            expected => {
+                apply_peeks => 'q[$s]',
+                eval_result => '$s',
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "q square array ref",
+            input    => 'q[$ar->[1]]',
+            expected => {
+                apply_peeks => 'q[$ar->[1]]',
+                eval_result => '$ar->[1]',
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q square hash ref",
+            input    => 'q[$hr->{b}]',
+            expected => {
+                apply_peeks => 'q[$hr->{b}]',
+                eval_result => '$hr->{b}',
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q square object key",
+            input    => 'q[$o->{cat}]',
+            expected => {
+                apply_peeks => 'q[$o->{cat}]',
+                eval_result => '$o->{cat}',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q square object method",
+            input    => 'q[$o->get]',
+            expected => {
+                apply_peeks => 'q[$o->get]',
+                eval_result => '$o->get',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q square scalar with fake method",
+            input    => 'q[$s->get]',
+            expected => {
+                apply_peeks => 'q[$s->get]',
+                eval_result => '$s->get',
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "q square array",
+            input    => 'q[@a]',
+            expected => {
+                apply_peeks => 'q[@a]',
+                eval_result => '@a',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q square array element",
+            input    => 'q[$a[1]]',
+            expected => {
+                apply_peeks => 'q[$a[1]]',
+                eval_result => '$a[1]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q square array elements (get)",
+            input    => 'q[@a[1,2]]',
+            expected => {
+                apply_peeks => 'q[@a[1,2]]',
+                eval_result => '@a[1,2]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q square array elements (print)",
+            input    => 'say q[@a[1,2]]',
+            expected => {
+                apply_peeks => 'say q[@a[1,2]]',
+                eval_result => '1',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q square hash",
+            input    => 'q[%h]',
+            expected => {
+                apply_peeks => 'q[%h]',
+                eval_result => '%h',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q square hash key",
+            input    => 'q[$h{b}]',
+            expected => {
+                apply_peeks => 'q[$h{b}]',
+                eval_result => '$h{b}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q square hash keys",
+            input    => 'q[@h{qw( a b )}]',
+            expected => {
+                apply_peeks => 'q[@h{qw( a b )}]',
+                eval_result => '@h{qw( a b )}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+
+        # Quoted: q - angle
+        {
+            name     => "q angle scalar",
+            input    => 'q<$s>',
+            expected => {
+                apply_peeks => 'q<$s>',
+                eval_result => '$s',
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array ref (syntax error)",
+            input    => 'q<$ar->[1]>',
+            expected => {
+                apply_peeks => 'q<$ar->[1]>',
+                eval_result => undef,
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array ref",
+            input    => 'q<$ar-\>[1]>',
+            expected => {
+                apply_peeks => 'q<$ar-\>[1]>',
+                eval_result => '$ar->[1]',
+                vars_after  => sub {
+                    is_deeply $ar, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle hash ref",
+            input    => 'q<$hr-\>{b}>',
+            expected => {
+                apply_peeks => 'q<$hr-\>{b}>',
+                eval_result => '$hr->{b}',
+                vars_after  => sub {
+                    is_deeply $hr, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle object key",
+            input    => 'q<$o-\>{cat}>',
+            expected => {
+                apply_peeks => 'q<$o-\>{cat}>',
+                eval_result => '$o->{cat}',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle object method",
+            input    => 'q<$o-\>get>',
+            expected => {
+                apply_peeks => 'q<$o-\>get>',
+                eval_result => '$o->get',
+                vars_after  => sub {
+                    is $o->{cat}, 5, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle scalar with fake method",
+            input    => 'q<$s-\>get>',
+            expected => {
+                apply_peeks => 'q<$s-\>get>',
+                eval_result => '$s->get',
+                vars_after  => sub {
+                    is $s,        777, shift;
+                    is $o->{cat}, 5,   shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array",
+            input    => 'q<@a>',
+            expected => {
+                apply_peeks => 'q<@a>',
+                eval_result => '@a',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array element",
+            input    => 'q<$a[1]>',
+            expected => {
+                apply_peeks => 'q<$a[1]>',
+                eval_result => '$a[1]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array elements (get)",
+            input    => 'q<@a[1,2]>',
+            expected => {
+                apply_peeks => 'q<@a[1,2]>',
+                eval_result => '@a[1,2]',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle array elements (print)",
+            input    => 'say q<@a[1,2]>',
+            expected => {
+                apply_peeks => 'say q<@a[1,2]>',
+                eval_result => '1',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
+            name     => "q angle hash",
+            input    => 'q<%h>',
+            expected => {
+                apply_peeks => 'q<%h>',
+                eval_result => '%h',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle hash key",
+            input    => 'q<$h{b}>',
+            expected => {
+                apply_peeks => 'q<$h{b}>',
+                eval_result => '$h{b}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "q angle hash keys",
+            input    => 'q<@h{qw( a b )}>',
+            expected => {
+                apply_peeks => 'q<@h{qw( a b )}>',
+                eval_result => '@h{qw( a b )}',
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
 
         # Quoted: qr
 

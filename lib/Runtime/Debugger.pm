@@ -33,6 +33,7 @@ use parent          qw( Exporter );
 
 our $VERSION = '0.15';
 our @EXPORT  = qw( run repl d np p );
+our %PEEKS;
 
 =head1 NAME
 
@@ -58,7 +59,7 @@ Same, but with some variables to play with:
 
 Current test command: 
 
-    RUNTIME_DEBUGGER_DEBUG=1 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; say "$v->get"; repl'
+    RUNTIME_DEBUGGER_DEBUG=2 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; my $o = bless {a => 11}, "A"; my $ar = \@a; say q(@h{qw( a b )}); repl'
 
 =cut
 
@@ -450,20 +451,23 @@ sub _set_peeks {
 
     my $levels =
       $self->_calc_scope;    # How many levels until at "$repl=" or main.
-    my $peek_my = peek_my( $levels );
+    my $peek_our = peek_our( $levels );
+    my $peek_my  = peek_my( $levels );
 
     # Add a reference to the repl.
     $peek_my->{'$repl'} = \$self;
 
-    my $peek_our     = peek_our( $levels );
-    my %peek_all     = ( %$peek_our, %$peek_my );
+    # Link for cleaner access later.
+    %PEEKS = ( %$peek_our, %$peek_my );
+
+    # Get just the variable names.
     my @vars_lexical = keys %$peek_my;
     my @vars_global  = keys %$peek_our;
     my @vars_all     = uniq @vars_lexical, @vars_global;
 
     $self->{peek_my}      = $peek_my;
     $self->{peek_our}     = $peek_our;
-    $self->{peek_all}     = \%peek_all;
+    $self->{peek_all}     = \%PEEKS;
     $self->{vars_lexical} = \@vars_lexical;
     $self->{vars_global}  = \@vars_global;
     $self->{vars_all}     = \@vars_all;
@@ -633,13 +637,11 @@ sub _apply_peeks {
     my ( $self, $code ) = @_;
     my $r = $self->_define_regex;
 
-    say "code:  [$code]" if $self->debug;
-
     $code =~ s{
         ($r->{text})
     }{
         local $_ = "$1";
-        d \%+ if $self->debug;
+        p \%+ if $self->debug >= 2;
 
         if($+{unquoted}){
             s/$r->{var_unquoted}/$self->_to_peek(%+)/ge;
@@ -650,8 +652,6 @@ sub _apply_peeks {
 
         $_;
     }xge;
-
-    say "code:  [$code]" if $self->debug;
 
     $code;
 }
@@ -690,15 +690,13 @@ sub _define_regex {
             (?<unquoted>
                 (?:
                     (?!
-                        $qq
-                        |
-                        $q
-                        |
-                        \b q[qrw]? \b
+                          $qq
+                        | $q
+                        | \b q[qrw]? \b
                     ) .
                 )++ # Should not be empty.
             )
-            (?{ say "unquoted: |$`<$&>$'|" if $self->debug })
+            (?{ say "unquoted: |$`:$&:$'|" if $self->debug >= 2 })
 
             |
 
@@ -718,7 +716,7 @@ sub _define_regex {
                     )
                 )
             $qq
-            (?{ say "qq:       |$`<$&>$'|" if $self->debug })
+            (?{ say "$qq:      |$`:$&:$'|" if $self->debug >= 2 })
 
             |
 
@@ -733,52 +731,66 @@ sub _define_regex {
                     )*
                 )
             $q
-            (?{ say "q:        |$`<$&>$'|" if $self->debug })
+            (?{ say "$q:       |$`:$&:$'|" if $self->debug >= 2 })
 
             |
 
             # qq and qr operators.
             \b q[qr] \b \s* (?<quoted>
-                (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
+                  (?&PARENS)
+                | (?&CURLY)
+                | (?&SQUARE)
+                | (?&ANGLE)
             )
-            (?{ say "qr:       |$`<$&>$'|" if $self->debug })
+            (?{ say "q[qr]:    |$`:$&:$'|" if $self->debug >= 2 })
 
             |
 
             # q and qw operators.
             # (no capture to skip it).
             \b qw? \b \s* (?:
-                (?&PARENS) | (?&CURLY) | (?&SQUARE) | (?&ANGLE)
+                  (?&PARENS)
+                | (?&CURLY)
+                | (?&SQUARE)
+                | (?&ANGLE)
             )
-            (?{ say "qw:       |$`<$&>$'|" if $self->debug })
+            (?{ say "qw?:      |$`:$&:$'|" if $self->debug >= 2 })
                 
             # Sub pattern definitions.
             (?(DEFINE)
                 (?<PARENS>
-                    \(
-                        (?:
-                            [^()\\]*+ | \\. | (?&PARENS)
-                        )*+
+                    \(                      (?{ say "  parenS  |$`:$&:$'|" if $self->debug >= 2 })
+                        (?:                 (?{ say "  parenA  |$`:$&:$'|" if $self->debug >= 2 })
+                              [^()\\]++     (?{ say "  parenB  |$`:$&:$'|" if $self->debug >= 2 })
+                            | \\.           (?{ say "  parenC  |$`:$&:$'|" if $self->debug >= 2 })
+                            | (?&PARENS)    (?{ say "  parenD  |$`:$&:$'|" if $self->debug >= 2 })
+                        )*+                 (?{ say "  parenE  |$`:$&:$'|" if $self->debug >= 2 })
                     \)
                 )
                 (?<CURLY>
                     \{
                         (?:
-                            [^{}\\]*+ | \\. | (?&CURLY)
+                              [^{}\\]++
+                            | \\.
+                            | (?&CURLY)
                         )*+
                     \}
                 )
                 (?<SQUARE>
                     \[
                         (?:
-                            [^\[\]\\]*+ | \\. | (?&SQUARE)
+                              [^\[\]\\]++
+                            | \\.
+                            | (?&SQUARE)
                         )*+
                     \]
                 )
                 (?<ANGLE>
                     <
                         (?:
-                            [^<>\\]*+ | \\. | (?&ANGLE)
+                              [^<>\\]++
+                            | \\.
+                            | (?&ANGLE)
                         )*+
                     >
                 )
@@ -805,8 +817,8 @@ sub _to_peek {
         $var = "\%$name";
     }
 
-    my $ref = ref $repl->{peek_all}{$var};
-    my $val = "\$repl->{peek_all}{qq(\Q$var\E)}";
+    my $ref = ref $PEEKS{$var};
+    my $val = sprintf( '$%s::PEEKS{qq(%s)}', __PACKAGE__, quotemeta( $var ), );
 
     if ( $repl->debug ) {
         say "var:   $var";
@@ -1350,6 +1362,15 @@ sub d {
 You can use "p" as a print command which
 can show a simple or complex data structure
 with colors.
+
+Some example uses:
+
+ p 123
+ p [1, 2, 3]
+ p $scalar
+ p \@array
+ p \%hash
+ p $object
 
 =cut
 
