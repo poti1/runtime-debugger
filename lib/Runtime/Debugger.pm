@@ -27,6 +27,7 @@ use Term::ANSIColor qw( colored );
 use PadWalker       qw( peek_our  peek_my );
 use Scalar::Util    qw( blessed reftype );
 use Class::Tiny     qw( term attr debug );
+use re              qw( eval ); # For debug.
 use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
