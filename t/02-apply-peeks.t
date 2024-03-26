@@ -5,7 +5,7 @@ package MyTest;
 use 5.006;
 use strict;
 use warnings;
-use Test::More tests => 3150;
+use Test::More tests => 3174;
 use Runtime::Debugger;
 use e;
 
@@ -3060,6 +3060,36 @@ sub run_suite {
         },
 
         # Quoted: Mixed
+        {
+            name     => "mixed quotes",
+            input    => 'join ",", qq($s), qw{a b c}',
+            expected => {
+                apply_peeks =>
+'join ",", qq(${$Runtime::Debugger::PEEKS{qq(\$s)}}), qw{a b c}',
+                eval_result => '777,a,b,c',
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+
+        # Nested.
+        {
+            name     => "nested lookup",
+            input    => '$hr->{$s}{$o->get} = $h{b}',
+            expected => {
+                apply_peeks =>
+'${$Runtime::Debugger::PEEKS{qq(\$hr)}}->{${$Runtime::Debugger::PEEKS{qq(\$s)}}}{${$Runtime::Debugger::PEEKS{qq(\$o)}}->get} = ${$Runtime::Debugger::PEEKS{qq(\%h)}}{b}',
+                eval_result => '2',
+                vars_after  => sub {
+                    is_deeply $hr,
+                      { a => 1, b => 2, 777 => { 'got method' => 2 } }, shift;
+                },
+            },
+            cleanup => sub {
+                $hr = { a => 1, b => 2 };
+            },
+        },
 
     );
 
