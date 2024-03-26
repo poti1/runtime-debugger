@@ -24,12 +24,12 @@ use Data::Dumper;
 use Data::Printer use_prototypes => 0;
 use Term::ReadLine;
 use Term::ANSIColor qw( colored );
-use List::Util      qw( uniq );
 use PadWalker       qw( peek_our  peek_my );
 use Scalar::Util    qw( blessed reftype );
 use Class::Tiny     qw( term attr debug );
 use feature         qw( say );
 use parent          qw( Exporter );
+use subs            qw( uniq );
 
 our $VERSION = '0.15';
 our @EXPORT  = qw( run repl d np p );
@@ -1380,6 +1380,22 @@ Some example uses:
  p $object
 
 =cut
+
+# Misc
+
+=head2 uniq
+
+Returns a unique list of elements.
+
+List::Util in at least perl v5.16 does not
+provide a unique function.
+
+=cut
+
+sub uniq (@) {
+    my %h;
+    grep { not $h{$_}++ } @_;
+}
 
 # Cleanup
 
