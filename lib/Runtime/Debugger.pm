@@ -1341,7 +1341,7 @@ sub _save_history {
 
 # Print
 
-=head2 Data::Dumper
+=head2 d
 
 You can use "d" as a print command which can show a simple or complex data structure.
 
