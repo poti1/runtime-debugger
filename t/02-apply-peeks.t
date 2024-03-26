@@ -7,7 +7,7 @@ use strict;
 use warnings;
 use Test::More tests => 3174;
 use Runtime::Debugger;
-use e;
+use feature qw( say );
 
 # Can enable for more outout when debugging.
 $ENV{RUNTIME_DEBUGGER_DEBUG} = 0;
