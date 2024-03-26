@@ -840,7 +840,6 @@ sub _to_peek {
         $val = "${sigil}{$val}";
     }
     else {
-        $repl->_show_error( "Unsupported type '$ref' (should not be here!!!)" );
         return $var;
     }
 
@@ -876,6 +875,14 @@ sub _step {
 sub _repl_step {
     my ( $repl ) = @_;
 
+    my $input = $repl->_build_step;
+
+    eval $input;
+}
+
+sub _build_step {
+    my ( $repl ) = @_;
+
     # Show help when first loading the debugger.
     $repl->help if not $repl->{first_run}++;
 
@@ -897,7 +904,7 @@ sub _repl_step {
 
     say "input_after_step=[$input]" if $repl->debug;
 
-    eval $input;
+    $input;
 }
 
 # Tab Completion
