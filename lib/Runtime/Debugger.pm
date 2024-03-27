@@ -17,7 +17,7 @@ package Runtime::Debugger;
 
 =cut
 
-use 5.012;
+use 5.018;
 use strict;
 use warnings FATAL => 'all';
 use Data::Dumper;

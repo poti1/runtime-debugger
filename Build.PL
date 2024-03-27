@@ -37,7 +37,7 @@ my $builder = $class->new(
         'Test::More' => '0',
     },
     requires => {
-        'perl'                => '5.014',
+        'perl'                => '5.018',
         'Term::ReadLine::Gnu' => '1.44',
         'PadWalker'           => '2.5',
         'Class::Tiny'         => '1.008',
