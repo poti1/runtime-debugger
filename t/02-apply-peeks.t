@@ -2333,7 +2333,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>get>',
-                eval_result => qr{ A=HASH \( 0x\w+ \) -\\>get }x,
+                eval_result => qr{ A=HASH \( 0x\w+ \) -[\\]?>get }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -2345,7 +2345,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$s)}}-\>get>',
-                eval_result => qr{:777-\\>get},
+                eval_result => qr{:777-[\\]?>get}, # Some perl version do not output the backslash here.
                 vars_after  => sub {
                     is $s,        777, shift;
                     is $o->{cat}, 5,   shift;
