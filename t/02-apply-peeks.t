@@ -2297,7 +2297,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$ar)}}-\>[1]>',
-                eval_result => qr{:ARRAY},    # Strange parsing.
+                eval_result => qr{: (?: ARRAY | \b2\b ) }x, # For v5.20.
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 2 ], shift;
                 },
@@ -2309,7 +2309,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$hr)}}-\>{b}>',
-                eval_result => qr{:HASH},     # Strange parsing.
+                eval_result => qr{: (?: HASH | \b2\b ) }x, # For v5.20.
                 eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 2 }, shift;
