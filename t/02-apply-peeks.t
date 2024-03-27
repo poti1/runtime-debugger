@@ -2322,7 +2322,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>{cat}>',
-                eval_result => qr{:A=HASH},
+                eval_result => qr{: (?: A=HASH | \b5\b ) }x, # For v5.20.
                 eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
