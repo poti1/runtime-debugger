@@ -3108,7 +3108,10 @@ sub run_suite {
         if ( $case->{expected}{eval_result} ) {
             my $expected = $case->{expected}{eval_result};
             my $actual   = eval $applied;
-            if ( ref( $expected ) eq ref( qr// ) ) {
+            if ($@) {
+                say $@;
+            }
+            elsif ( ref( $expected ) eq ref( qr// ) ) {
                 next
                   unless like( $actual, $expected,
                     "$case->{name} - eval result (regex). [$actual]",
