@@ -3098,7 +3098,7 @@ sub run_suite {
 
         # Check if peek data is properly applied.
         my $applied = $repl->_apply_peeks( $case->{input} );
-        last
+        next
           unless is(
             $applied,
             $case->{expected}{apply_peeks},
@@ -3110,13 +3110,13 @@ sub run_suite {
             my $expected = $case->{expected}{eval_result};
             my $actual   = eval $applied;
             if ( ref( $expected ) eq ref( qr// ) ) {
-                last
+                next
                   unless like( $actual, $expected,
                     "$case->{name} - eval result (regex)",
                   );
             }
             else {
-                last
+                next
                   unless is( $actual, $expected,
                     "$case->{name} - eval result", );
             }
@@ -3124,7 +3124,7 @@ sub run_suite {
 
         # Check variables are actually set.
         if ( $case->{expected}{vars_after} ) {
-            last
+            next
               unless $case->{expected}{vars_after}
               ->( "$case->{name} - vars after" );
         }

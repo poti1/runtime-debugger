@@ -857,7 +857,7 @@ sub _test_repl_vars {
 _run_case( $repl, init_case() );
 
 for my $case ( _define_test_cases( $repl ) ) {
-    last if _run_case( $repl, $case );
+    next if _run_case( $repl, $case );
 }
 
 _test_repl_vars( $repl );
