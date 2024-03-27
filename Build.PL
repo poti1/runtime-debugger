@@ -21,6 +21,11 @@ my $class = Module::Build->subclass(
             }
             $s->SUPER::ACTION_installdeps;
         }
+        sub ACTION_readme {
+            my ($s) = @_;
+            print "Building README\n";
+            system "pod2markdown lib/Runtime/Debugger.pm > README.md";
+        }
     },
 );
 

@@ -2,18 +2,18 @@ package Runtime::Debugger;
 
 =head1 LOGO
 
- ____              _   _
-|  _ \ _   _ _ __ | |_(_)_ __ ___   ___
-| |_) | | | | '_ \| __| | '_ ` _ \ / _ \
-|  _ <| |_| | | | | |_| | | | | | |  __/
-|_| \_\\__,_|_| |_|\__|_|_| |_| |_|\___|
+  ____              _   _
+ |  _ \ _   _ _ __ | |_(_)_ __ ___   ___
+ | |_) | | | | '_ \| __| | '_ ` _ \ / _ \
+ |  _ <| |_| | | | | |_| | | | | | |  __/
+ |_| \_\\__,_|_| |_|\__|_|_| |_| |_|\___|
 
- ____       _
-|  _ \  ___| |__  _   _  __ _  __ _  ___ _ __
-| | | |/ _ \ '_ \| | | |/ _` |/ _` |/ _ \ '__|
-| |_| |  __/ |_) | |_| | (_| | (_| |  __/ |
-|____/ \___|_.__/ \__,_|\__, |\__, |\___|_|
-                        |___/ |___/
+  ____       _
+ |  _ \  ___| |__  _   _  __ _  __ _  ___ _ __
+ | | | |/ _ \ '_ \| | | |/ _` |/ _` |/ _ \ '__|
+ | |_| |  __/ |_) | |_| | (_| | (_| |  __/ |
+ |____/ \___|_.__/ \__,_|\__, |\__, |\___|_|
+                         |___/ |___/
 
 =cut
 
@@ -58,7 +58,7 @@ Same, but with some variables to play with:
 
     perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; repl; say $@'
 
-Current test command: 
+Current test command:
 
     RUNTIME_DEBUGGER_DEBUG=2 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; my $o = bless {a => 11}, "A"; my $ar = \@a; my $hr = \%h; use warnings FATAL => "all"; eval{ say qr<$hr-\>{b}> }; say "222"'
 
@@ -756,7 +756,7 @@ sub _define_regex {
                 | (?&ANGLE)
             )
             (?{ say "qw?:      |$`:$&:$'|" if $self->debug >= 2 })
-                
+
             # Sub pattern definitions.
             (?(DEFINE)
                 (?<PARENS>
@@ -1486,10 +1486,6 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >> E<0x1f42a>E<0x1f977>
 
 =head1 BUGS
 
-- L<no new lexicals|/New Variables>
-
-Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
-
 =head2 Control-C
 
 Doing a Control-C may occassionally break the output in your terminal.
@@ -1537,6 +1533,10 @@ This piece of code demonstrates the problem with using c<eval run>.
  });
 
 This issue is described here L<https://www.perlmonks.org/?node_id=11158351>
+
+=head2 Other
+
+Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
 =cut
 
