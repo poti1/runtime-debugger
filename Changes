@@ -4,9 +4,10 @@ Revision history for Runtime-Debugger
 0.15
 ====
 
-2024-03-15
+2024-03-28
 
-Improved doc and usage.
+Created new function to avoid lossy vars: repl.
+Cleaned up README/pod.
 
 ====
 0.14

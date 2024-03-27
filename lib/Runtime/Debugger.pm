@@ -51,7 +51,7 @@ In a script:
     use Runtime::Debugger;
     repl;
 
-On the commandline):
+On the commandline:
 
     perl -MRuntime::Debugger -E 'repl'
 
@@ -145,17 +145,21 @@ Sample Output:
 
 =cut
 
-=head2 Genesis
+=head2 This Module
 
 While debugging some long-running, perl,
 Selenium test files, I basically got bored
-and created a simple Read Evaluate Print Loop
-(REPL). Originally I would have a hot key
+during the long waits, and created a simple
+Read Evaluate Print Loop (REPL) to avoid
+the annoyong waits between test tries.
+
+Originally I would have a hot key
 command to drop in a snippet of code like
-this into my test code to essentially insert a breakpoint/pause.
+this into my test code to essentially insert
+a breakpoint/pause.
 
 One can then examine what's going on in that
-area of code and evaluate some code.
+area of code.
 
 Originally the repl code snippet was something
 as simple as this:
@@ -176,26 +180,24 @@ field before text could be entered).
 And I was quite satisfied.
 
 From there, this module increased in features
-such as using C<Term::ReadLine> for a more
-natural readline support, tab completion,
-and history (up arrow).
+such as using C<Term::ReadLine> for readline
+support,tab completion, and history (up arrow).
 
 =cut
 
-=head2 Attempted Solutions
+=head3 Attempts
 
 This module has changed in its approach quite a
 few times since it turns out to be quite tricky
 to perform C<eval_in_scope>.
 
-=cut
-
-=head3 Source Filter
+=head4 Source Filter
 
 To make usage of this module as simple as
 possible, I tried my hand at source filters.
 
-My idea was that by simply adding this line of code:
+My idea was that by simply adding this line
+of code:
 
  use Runtime::Debugger;
 
@@ -210,9 +212,9 @@ read as a string then evaled.
 So, source filters, despite how clean they would
 make my solution, would not work for my use cases.
 
-=cut
+Next idea.
 
-=head3 Back To Eval
+=head4 Back To Eval
 
 Then I decided to go back to using a command like:
 
@@ -224,7 +226,7 @@ code and eval would use the current scope to
 apply the code.
 
 Side note: other Debuggers I had tried before this
-one could not update lexical variables in the
+one, do not update lexical variables in the
 current scope. So this, I think, is unique in this debugger.
 
 =head4 Next pitfall
@@ -249,11 +251,11 @@ same eval line would print undef afterwards.
 Using C<eval run> is still possible (for now).
 
 Just be aware that it does not evaluate correctly
-under certaini circumstances.
+under certain circumstances.
 
 =cut
 
-=head2 Current Solution
+=head2 Solution
 
 Simply add these lines:
 
@@ -293,10 +295,23 @@ In order to eval a string of perl code correctly,
 we need to figure out at which level the variable
 is located.
 
+Thats not hard to do: just look through increasing
+C<caller()> levels until finding the first whose
+package name is not thia module's.
+
 =head4 Peek
 
 Given the scope level, peek_my/our is utilized
-to grab all the variables.
+to grab all the variables in that scope.
+
+Having these variables:
+
+ my  $var = 111;
+ our $var = 222;
+
+There can only be a single variable (glob) of
+a name. When multiple, the lexical one would
+be used.
 
 =head4 Preprocess
 
@@ -307,16 +322,29 @@ At this stage variables would be replaced which
 their equivalent representation at found in
 peek_my/our.
 
+This code:
+
+ say $var
+
+Might be replaced with something like this:
+
+ say ${$PEEKS{'$var'}}
+
+This transformation would normally be down
+seamlessly and hidden from the user.
+
 =head4 Eval
 
 Finally, eval the string.
 
+And we pretend to have done C<eval_in_scope>.
+
 =head3 Future Ideas
 
 One idea would be to create an XS function
-which can perform an eval in specific scope,
-but naturally without the translation magic
-that is currently being done.
+which can perform an eval in a specific scope,
+but without the translation magic that is
+currently being done.
 
 This might appear like peek_my, but for eval.
 So something like this:
@@ -333,13 +361,14 @@ So something like this:
 
 =head2 run
 
-Runs the REPL (dont forget eval!)
+DEPRECATED! (Use C<repl> instead)
+
+Runs the REPL.
 
  eval run
 
-Sets C<$@> to the exit reason like 'INT' (Control-C) or 'q' (Normal exit/quit).
-
-Do NOT use this unless for oneliners (which do not support source filters).
+Sets C<$@> to the exit reason like
+'INT' (Control-C) or 'q' (Normal exit/quit).
 
 Note: This method is more stable than repl(), but at the same
 time has limits. L<See also|/Lossy undef Variable>
@@ -621,17 +650,13 @@ Try to insert the peek_my/our references
 (peeks) only when needed (should appear
 natural to the user).
 
-Should NOT transform this:
-
- say "%h"
-
-Instead, this:
+Ok to transform:
 
  say "@a"
 
-Might be transformed into:
+NOT ok to transform:
 
- say "@{$repl->{peeks_all}{'@a'}}";
+ say "%h"
 
 =cut
 
@@ -915,11 +940,16 @@ sub _build_step {
 
 This module has rich, DWIM tab completion support:
 
- - Press TAB with no input to view commands and available variables in the current scope.
- - Press TAB after an arrow ("->") to auto append either a "{" or "[" or "(".
-    This depends on the type of variable before it.
- - Press TAB after a hash (or hash object) to list available keys.
- - Press TAB anywhere else to list variables.
+ Press TAB when:
+
+ - No input - view commands and variables.
+
+ - After arrow ("->") - to auto append either a "{" or "[" or "(".
+   (Depends on variable type)
+
+ - After a hash) - show keys.
+
+ - Otherwise - show variables.
 
 =cut
 
@@ -1129,7 +1159,7 @@ sub _complete_vars {
 
 =head2 _match
 
-Returns the possible matches:
+Wrapper to simplify completion function.
 
 Input:
 
@@ -1138,6 +1168,8 @@ Input:
  prepend => "STRING", # Default: ""  - prepend to each possiblity.
  nospace => 0,        # Default: "0" - will not append a space after a completion.
 
+Returns the possible matches:
+
 =cut
 
 sub _match {
@@ -1145,16 +1177,17 @@ sub _match {
     my %parms = @_;
     $self->_dump_args( @_ ) if $self->debug >= 2;
 
-    # completion_word does not automationally get reset per call.
-    # completion_suppress_append gets reset perl call.
-    # attempted_completion_over gets reset perl call.
-    $parms{partial} //= "";
-    $parms{prepend} //= "";
+    # completion_word does NOT automationally get reset per call.
+    # completion_suppress_append gets reset per call.
+    # attempted_completion_over gets reset per call.
     $self->attr->{completion_word}            = $parms{words};
     $self->attr->{completion_suppress_append} = 1 if $parms{nospace};
-    $self->attr->{attempted_completion_over} =
-      1;    # Will not use filename completion at all.
+    $self->attr->{attempted_completion_over}  = 1;  # Avoid filename completion.
 
+    $parms{partial} //= "";
+    $parms{prepend} //= "";
+
+    # Return possible matches.
     map { "$parms{prepend}$_" }
       $self->term->completion_matches( $parms{partial},
         $self->attr->{list_completion_function} );
@@ -1345,9 +1378,10 @@ sub _save_history {
 
 =head2 d
 
-You can use "d" as a print command which can show a simple or complex data structure.
-
 Data::Dumper::Dump anything.
+
+You can use "d" as a print command which
+can show a simple or complex data structure.
 
  d 123
  d [1, 2, 3]
@@ -1366,7 +1400,9 @@ sub d {
     print $d->Dump;
 }
 
-=head2 Data::Printer
+=head2 p
+
+Data::Printer::p
 
 You can use "p" as a print command which
 can show a simple or complex data structure
@@ -1389,7 +1425,7 @@ Some example uses:
 
 Returns a unique list of elements.
 
-List::Util in at least perl v5.16 does not
+List::Util in lower than v5.26 does not
 provide a unique function.
 
 =cut
@@ -1457,7 +1493,8 @@ Install required library:
 
  sudo apt install libreadline-dev
 
-Enable this environmental variable to show debugging information:
+Enable this environmental variable to
+show debugging information:
 
  RUNTIME_DEBUGGER_DEBUG=1
 
@@ -1489,7 +1526,9 @@ Tim Potapov, C<< <tim.potapov[AT]gmail.com> >> E<0x1f42a>E<0x1f977>
 
 =head2 Control-C
 
-Doing a Control-C may occassionally break the output in your terminal.
+Doing a Control-C may occassionally break
+the output in your terminal (exit with 'q'
+when possible).
 
 Simply run any one of these:
 
@@ -1499,23 +1538,27 @@ Simply run any one of these:
 
 =head2 New Variables
 
-Currently it is not possible to create new lexicals (my) variables.
+Currently it is not possible to create new
+lexicals (my) variables.
 
-I have not yet found a way to run "eval" with a higher scope of lexicals.
-(perhaps there is another way?)
+You can create new global variables by:
 
-You can make global variables though if:
+ - Default
+   $var=123
 
- - By default ($var=123)
- - Using our (our $var=123)
- - Given the full path ($My::var = 123)
+ - Using our
+   $our $var=123
+
+ - Given the full path
+   $My::var = 123
 
 =head2 Lossy undef Variable
 
-inside a long running (and perhaps complicated) script, a variable
-may become undef.
+inside a long running (and perhaps complicated)
+script, a variable may become undef.
 
-This piece of code demonstrates the problem with using c<eval run>.
+This piece of code demonstrates the problem
+with using c<eval run>.
 
  sub Func {
      my ($code) = @_;
@@ -1526,24 +1569,27 @@ This piece of code demonstrates the problem with using c<eval run>.
      my $v2 = 222;
 
      # This causes issues.
-     use Runtime::Debugger -nofilter;
+     use Runtime::Debugger;
      eval run;
 
-     # Whereas, this one uses a source filter and works.
+     # Whereas, this one works.
      use Runtime::Debugger;
+     repl;
  });
 
 This issue is described here L<https://www.perlmonks.org/?node_id=11158351>
 
 =head2 Other
 
-Please report any (other) bugs or feature requests to L<https://github.com/poti1/runtime-debugger/issues>.
+Please report any (other) bugs or feature
+requests to L<https://github.com/poti1/runtime-debugger/issues>.
 
 =cut
 
 =head1 SUPPORT
 
-You can find documentation for this module with the perldoc command.
+You can find documentation for this module
+with the perldoc command.
 
     perldoc Runtime::Debugger
 
