@@ -3111,7 +3111,7 @@ sub run_suite {
             if ( ref( $expected ) eq ref( qr// ) ) {
                 next
                   unless like( $actual, $expected,
-                    "$case->{name} - eval result (regex)",
+                    "$case->{name} - eval result (regex). $actual",
                   );
             }
             else {
