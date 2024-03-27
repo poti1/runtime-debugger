@@ -2322,6 +2322,7 @@ sub run_suite {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>{cat}>',
                 eval_result => qr{:A=HASH},
+                eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -2334,6 +2335,7 @@ sub run_suite {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>get>',
                 eval_result => qr{ A=HASH \( 0x\w+ \) -[\\]?>get }x,
+                eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
                 },
@@ -2346,6 +2348,7 @@ sub run_suite {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$s)}}-\>get>',
                 eval_result => qr{:777-[\\]?>get}, # Some perl version do not output the backslash here.
+                eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is $s,        777, shift;
                     is $o->{cat}, 5,   shift;
@@ -3109,7 +3112,16 @@ sub run_suite {
             my $expected = $case->{expected}{eval_result};
             my $actual   = eval $applied;
             if ($@) {
-                say $@;
+                if ( $case->{expected}{eval_error} ) {
+                    my $error = $case->{expected}{eval_error};
+                    next
+                      unless like( "$@", $error,
+                        "$case->{name} - eval result (error). [$actual]",
+                      );
+                    }
+                else {
+                    fail "$case->{name} - eval result ($@). [$actual]";
+                }
             }
             elsif ( ref( $expected ) eq ref( qr// ) ) {
                 next
