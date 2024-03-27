@@ -23,6 +23,7 @@ use warnings FATAL => 'all';
 use Data::Dumper;
 use Data::Printer use_prototypes => 0;
 use Term::ReadLine;
+use List::Util      qw( uniq );
 use Term::ANSIColor qw( colored );
 use PadWalker       qw( peek_our  peek_my );
 use Scalar::Util    qw( blessed reftype );
@@ -1384,7 +1385,7 @@ Some example uses:
 
 # Misc
 
-=head2 uniq
+=head2 uniq2
 
 Returns a unique list of elements.
 
@@ -1393,7 +1394,7 @@ provide a unique function.
 
 =cut
 
-sub uniq (@) {
+sub uniq2 (@) {
     my %h;
     grep { not $h{$_}++ } @_;
 }
