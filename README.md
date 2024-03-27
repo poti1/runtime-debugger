@@ -21,11 +21,12 @@ Runtime::Debugger - Easy to use REPL with existing lexical support and DWIM tab 
 
 # SYNOPSIS
 
-Start the debugger in a script:
+In a script:
 
     use Runtime::Debugger;
+    repl;
 
-Start the debugger (ONLY on the commandline):
+On the commandline):
 
     perl -MRuntime::Debugger -E 'repl'
 
@@ -33,7 +34,7 @@ Same, but with some variables to play with:
 
     perl -MRuntime::Debugger -E 'my $str1 = "Func"; our $str2 = "Func2"; my @arr1 = "arr-1"; our @arr2 = "arr-2"; my %hash1 = qw(hash 1); our %hash2 = qw(hash 2); my $coderef = sub { "code-ref: @_" }; {package My; sub Func{"My-Func"} sub Func2{"My-Func2"}} my $obj = bless {}, "My"; repl; say $@'
 
-Current test command:
+Test command:
 
     RUNTIME_DEBUGGER_DEBUG=2 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; my $o = bless {a => 11}, "A"; my $ar = \@a; my $hr = \%h; use warnings FATAL => "all"; eval{ say qr<$hr-\>{b}> }; say "222"'
 
