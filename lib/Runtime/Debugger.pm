@@ -19,7 +19,7 @@ package Runtime::Debugger;
 
 use 5.012;
 use strict;
-use warnings;
+use warnings FATAL => 'all';
 use Data::Dumper;
 use Data::Printer use_prototypes => 0;
 use Term::ReadLine;
@@ -27,7 +27,7 @@ use Term::ANSIColor qw( colored );
 use PadWalker       qw( peek_our  peek_my );
 use Scalar::Util    qw( blessed reftype );
 use Class::Tiny     qw( term attr debug );
-use re              qw( eval ); # For debug.
+use re              qw( eval );                # For debug.
 use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
@@ -60,7 +60,7 @@ Same, but with some variables to play with:
 
 Current test command: 
 
-    RUNTIME_DEBUGGER_DEBUG=2 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; my $o = bless {a => 11}, "A"; my $ar = \@a; say q(@h{qw( a b )}); repl'
+    RUNTIME_DEBUGGER_DEBUG=2 perl -Ilib/ -MRuntime::Debugger -E 'my @a = 1..2; my %h = qw( a 11 b 22 ); my $v = 222; my $o = bless {a => 11}, "A"; my $ar = \@a; my $hr = \%h; use warnings FATAL => "all"; eval{ say qr<$hr-\>{b}> }; say "222"'
 
 =cut
 

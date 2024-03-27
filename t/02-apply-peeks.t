@@ -4,7 +4,6 @@ package MyTest;
 
 use 5.006;
 use strict;
-use warnings;
 use Test::More tests => 3174;
 use Runtime::Debugger;
 use feature qw( say );
