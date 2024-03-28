@@ -1,6 +1,14 @@
 Revision history for Runtime-Debugger
 
 ====
+0.16
+====
+
+2024-03-28
+
+No longer expanding escaped variable in quotes.
+
+====
 0.15
 ====
 

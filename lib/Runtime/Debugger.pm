@@ -32,7 +32,7 @@ use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 our @EXPORT  = qw( run repl d np p );
 our %PEEKS;
 
@@ -704,6 +704,7 @@ sub _define_regex {
         }x,
 
         var_quoted => qr{
+            (?<! \\ )  # Should not be escaped.
             (?<var>
                 (?<sigil> [\$\@] )
                 (?<name> $var_name )
@@ -877,7 +878,7 @@ sub _step {
     my ( $self ) = @_;
 
     # Show help when first loading the debugger.
-    if ( not $self->{first_run}++ ) {
+    if ( not $self->{step_counter}++ ) {
         $self->help;
     }
 
@@ -911,7 +912,7 @@ sub _build_step {
     my ( $repl ) = @_;
 
     # Show help when first loading the debugger.
-    $repl->help if not $repl->{first_run}++;
+    $repl->help if not $repl->{step_counter}++;
 
     my $input = $repl->term->readline( "perl>" ) // '';
     say "input_after_readline=[$input]" if $repl->debug;

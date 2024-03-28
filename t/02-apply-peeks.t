@@ -4,7 +4,7 @@ package MyTest;
 
 use 5.006;
 use strict;
-use Test::More tests => 3174;
+use Test::More tests => 3246;
 use Runtime::Debugger;
 use feature qw( say );
 
@@ -411,10 +411,6 @@ sub run_suite {
             },
         },
 
-        # TODO
-
-        # Nested structures.
-
         # Quoted: "
         {
             name     => "Double quoted scalar",
@@ -422,6 +418,17 @@ sub run_suite {
             expected => {
                 apply_peeks => '"${$Runtime::Debugger::PEEKS{qq(\$s)}}"',
                 eval_result => "777",
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "Double quoted escaped scalar",
+            input    => '"\$s"',
+            expected => {
+                apply_peeks => '"\$s"',
+                eval_result => '$s',
                 vars_after  => sub {
                     is $s, 777, shift;
                 },
@@ -495,6 +502,17 @@ sub run_suite {
             },
         },
         {
+            name     => "Double quoted array escaped",
+            input    => '"\@a"',
+            expected => {
+                apply_peeks => '"\@a"',
+                eval_result => '@a',
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
             name     => "Double quotes array element",
             input    => '"$a[1]"',
             expected => {
@@ -521,6 +539,17 @@ sub run_suite {
             input    => '"%h"',
             expected => {
                 apply_peeks => '"%h"',
+                eval_result => "%h",
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "Double quoted hash escaped",
+            input    => '"\%h"',
+            expected => {
+                apply_peeks => '"\%h"',
                 eval_result => "%h",
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
@@ -558,6 +587,17 @@ sub run_suite {
             expected => {
                 apply_peeks => q('$s'),
                 eval_result => q($s),
+                vars_after  => sub {
+                    is $s, 777, shift;
+                },
+            },
+        },
+        {
+            name     => "Single quoted escaped scalar",
+            input    => q('\$s'),
+            expected => {
+                apply_peeks => q('\$s'),
+                eval_result => q(\$s),
                 vars_after  => sub {
                     is $s, 777, shift;
                 },
@@ -631,6 +671,17 @@ sub run_suite {
             },
         },
         {
+            name     => "Single quoted escaped array",
+            input    => q('\@a'),
+            expected => {
+                apply_peeks => q('\@a'),
+                eval_result => q(\@a),
+                vars_after  => sub {
+                    is_deeply \@a, [ 1, 2 ], shift;
+                },
+            },
+        },
+        {
             name     => "Single quotes array element",
             input    => q('$a[1]'),
             expected => {
@@ -658,6 +709,17 @@ sub run_suite {
             expected => {
                 apply_peeks => q('%h'),
                 eval_result => q(%h),
+                vars_after  => sub {
+                    is_deeply \%h, { a => 1, b => 2 }, shift;
+                },
+            },
+        },
+        {
+            name     => "Single quoted escaped hash",
+            input    => q('\%h'),
+            expected => {
+                apply_peeks => q('\%h'),
+                eval_result => q(\%h),
                 vars_after  => sub {
                     is_deeply \%h, { a => 1, b => 2 }, shift;
                 },
@@ -2297,7 +2359,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$ar)}}-\>[1]>',
-                eval_result => qr{: (?: ARRAY | \b2\b ) }x, # For v5.20.
+                eval_result => qr{: (?: ARRAY | \b2\b ) }x,    # For v5.20.
                 vars_after  => sub {
                     is_deeply $ar, [ 1, 2 ], shift;
                 },
@@ -2309,7 +2371,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$hr)}}-\>{b}>',
-                eval_result => qr{: (?: HASH | \b2\b ) }x, # For v5.20.
+                eval_result => qr{: (?: HASH | \b2\b ) }x,          # For v5.20.
                 eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is_deeply $hr, { a => 1, b => 2 }, shift;
@@ -2322,7 +2384,7 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$o)}}-\>{cat}>',
-                eval_result => qr{: (?: A=HASH | \b5\b ) }x, # For v5.20.
+                eval_result => qr{: (?: A=HASH | \b5\b ) }x,        # For v5.20.
                 eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
                 vars_after  => sub {
                     is $o->{cat}, 5, shift;
@@ -2348,9 +2410,10 @@ sub run_suite {
             expected => {
                 apply_peeks =>
                   'qr<${$Runtime::Debugger::PEEKS{qq(\$s)}}-\>get>',
-                eval_result => qr{:777-[\\]?>get}, # Some perl version do not output the backslash here.
-                eval_error  => qr{ Unescaped \s+ left \s+ brace }x,
-                vars_after  => sub {
+                eval_result => qr{:777-[\\]?>get}
+                ,    # Some perl version do not output the backslash here.
+                eval_error => qr{ Unescaped \s+ left \s+ brace }x,
+                vars_after => sub {
                     is $s,        777, shift;
                     is $o->{cat}, 5,   shift;
                 },
@@ -3101,7 +3164,7 @@ sub run_suite {
 
         # Check if peek data is properly applied.
         my $applied = $repl->_apply_peeks( $case->{input} );
-        next
+        last
           unless is(
             $applied,
             $case->{expected}{apply_peeks},
@@ -3112,34 +3175,35 @@ sub run_suite {
         if ( $case->{expected}{eval_result} ) {
             my $expected = $case->{expected}{eval_result};
             my $actual   = eval $applied;
-            if ($@) {
+            if ( $@ ) {
                 if ( $case->{expected}{eval_error} ) {
                     my $error = $case->{expected}{eval_error};
-                    next
+                    last
                       unless like( "$@", $error,
                         "$case->{name} - eval result (error). [$actual]",
                       );
-                    }
+                }
                 else {
                     fail "$case->{name} - eval result ($@). [$actual]";
+                    last;
                 }
             }
             elsif ( ref( $expected ) eq ref( qr// ) ) {
-                next
+                last
                   unless like( $actual, $expected,
                     "$case->{name} - eval result (regex). [$actual]",
                   );
             }
             else {
-                next
+                last
                   unless is( $actual, $expected,
-                    "$case->{name} - eval result");
+                    "$case->{name} - eval result" );
             }
         }
 
         # Check variables are actually set.
         if ( $case->{expected}{vars_after} ) {
-            next
+            last
               unless $case->{expected}{vars_after}
               ->( "$case->{name} - vars after" );
         }
