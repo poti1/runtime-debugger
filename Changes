@@ -1,6 +1,15 @@
 Revision history for Runtime-Debugger
 
 ====
+0.17
+====
+
+2024-04-02
+
+Fixed bug with no being able to use help/hist
+with (old) "eval run".
+
+====
 0.16
 ====
 

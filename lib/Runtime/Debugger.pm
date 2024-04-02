@@ -32,7 +32,7 @@ use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 our @EXPORT  = qw( run repl d np p );
 our %PEEKS;
 
@@ -875,28 +875,28 @@ sub _to_peek {
 }
 
 sub _step {
-    my ( $self ) = @_;
+    my ( $repl ) = @_;
 
     # Show help when first loading the debugger.
-    if ( not $self->{step_counter}++ ) {
-        $self->help;
+    if ( not $repl->{step_counter}++ ) {
+        $repl->help;
     }
 
-    my $input = $self->term->readline( "perl>" ) // '';
-    say "input_after_readline=[$input]" if $self->debug;
+    my $input = $repl->term->readline( "perl>" ) // '';
+    say "input_after_readline=[$input]" if $repl->debug;
 
-    # Change "COMMAND ARG" to "$self->COMMAND(ARG)".
+    # Change "COMMAND ARG" to "$repl->COMMAND(ARG)".
     $input =~ s/ ^
         (
               help
             | hist
         ) \b
         (.*)
-    $ /\$self->$1($2)/x;
+    $ /\$repl->$1($2)/x;
 
-    $self->_exit( $input ) if $input eq 'q';
+    $repl->_exit( $input ) if $input eq 'q';
 
-    say "input_after_step=[$input]" if $self->debug;
+    say "input_after_step=[$input]" if $repl->debug;
     $input;
 }
 
