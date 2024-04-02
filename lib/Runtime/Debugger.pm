@@ -32,7 +32,7 @@ use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 our @EXPORT  = qw( run repl d np p );
 our %PEEKS;
 
@@ -1597,6 +1597,7 @@ with the perldoc command.
 You can also look for information at:
 
 L<https://metacpan.org/pod/Runtime::Debugger>
+
 L<https://github.com/poti1/runtime-debugger>
 
 =cut
