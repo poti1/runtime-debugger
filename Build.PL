@@ -26,13 +26,9 @@ my $class = Module::Build->subclass(
             print "Building README\n";
             system "pod2markdown lib/Runtime/Debugger.pm > README.md";
         }
-        sub ACTION_build {
-            my ($s) = @_;
-            $s->ACTION_readme; 
-            $s->SUPER::ACTION_build; 
-        }
     },
 );
+$class->ACTION_readme();
 
 my $builder = $class->new(
     module_name        => 'Runtime::Debugger',
