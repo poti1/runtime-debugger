@@ -26,6 +26,11 @@ my $class = Module::Build->subclass(
             print "Building README\n";
             system "pod2markdown lib/Runtime/Debugger.pm > README.md";
         }
+        sub ACTION_build {
+            my ($s) = @_;
+            $s->ACTION_readme; 
+            $s->SUPER::ACTION_build; 
+        }
     },
 );
 
@@ -48,7 +53,13 @@ my $builder = $class->new(
         'Class::Tiny'         => '1.008',
         'Data::Printer'       => '1.002001',
     },
-    add_to_cleanup => [ 'Runtime-Debugger-*', 'build_dir/', 'MANIFEST*.bak' ],
+    add_to_cleanup => [
+        'Runtime-Debugger-*',
+        'build_dir/',
+        'MANIFEST*.bak',
+        'README*',
+        'blib/',
+    ],
     meta_merge     => {
         resources => {
             bugtracker => 'https://github.com/poti1/runtime-debugger/issues',
