@@ -295,7 +295,7 @@ Might be replaced with something like this:
 
     say ${$PEEKS{'$var'}}
 
-This transformation would normally be down
+This transformation would normally be done
 seamlessly and hidden from the user.
 
 #### Eval
