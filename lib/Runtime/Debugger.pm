@@ -32,7 +32,7 @@ use feature         qw( say );
 use parent          qw( Exporter );
 use subs            qw( uniq );
 
-our $VERSION = '0.21';
+our $VERSION = '0.22';
 our @EXPORT  = qw( run repl d dd np p );
 our %PEEKS;
 
@@ -1437,7 +1437,7 @@ of a structure/variable.
 
 sub dd {
     require Devel::Peek;
-    Devel::Peek::Dump( \@_ );
+    Devel::Peek::Dump( @_ );
 }
 
 =head2 p
