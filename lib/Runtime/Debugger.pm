@@ -1382,7 +1382,7 @@ sub _restore_history {
             warn "$@\n";
             return;
         }
-        @history = $all->{history}->@*;
+        @history = @{$all->{history}};
     }
 
     @history = ( "q" ) if not @history;    # avoid blank history.
