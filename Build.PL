@@ -6,6 +6,11 @@ use warnings;
 use Module::Build;
 Module::Build->VERSION( '0.4004' );
 
+sub _remove_old_history {
+    my $old = "$ENV{HOME}/.runtime_debugger.info";
+    unlink $old if -e $old;
+}
+
 my $class = Module::Build->subclass(
     code => q{
         use ExtUtils::MakeMaker;
@@ -28,6 +33,7 @@ my $class = Module::Build->subclass(
         }
     },
 );
+_remove_old_history();
 $class->ACTION_readme();
 
 my $builder = $class->new(
@@ -48,15 +54,14 @@ my $builder = $class->new(
         'PadWalker'           => '2.5',
         'Class::Tiny'         => '1.008',
         'Data::Printer'       => '1.002001',
+        'YAML::XS'            => '0',
     },
     add_to_cleanup => [
-        'Runtime-Debugger-*',
-        'build_dir/',
-        'MANIFEST*.bak',
-        'README*',
-        'blib/',
+        'Runtime-Debugger-*', 'build_dir/',
+        'MANIFEST*.bak',      'README*',
+        'blib/',              "$ENV{HOME}/.runtime_debugger.info",
     ],
-    meta_merge     => {
+    meta_merge => {
         resources => {
             bugtracker => 'https://github.com/poti1/runtime-debugger/issues',
             repository => 'https://github.com/poti1/runtime-debugger',
