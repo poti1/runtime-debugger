@@ -33,7 +33,7 @@ use feature qw( say );
 use parent  qw( Exporter );
 use subs    qw( uniq );
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 our @EXPORT  = qw( run repl d dd np p );
 our %PEEKS;
 

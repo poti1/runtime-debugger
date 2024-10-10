@@ -1,6 +1,12 @@
 Revision history for Runtime-Debugger
 
 =================
+1.07 - 2024-10-10
+=================
+
+Installs system readline by its self.
+
+=================
 1.06 - 2024-10-10
 =================
 
