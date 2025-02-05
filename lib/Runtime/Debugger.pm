@@ -407,11 +407,11 @@ CODE
 
 Works like eval, but without L<the lossy bug|/Lossy undef Variable>
 
-repl (
-    history_file => "$ENV{HOME}/.runtime_debugger.yml",
-    debug        => $ENV{RUNTIME_DEBUGGER_DEBUG} // 0,
-    levels_up    => 0,
-);
+ repl (
+     history_file => "$ENV{HOME}/.runtime_debugger.yml",
+     debug        => $ENV{RUNTIME_DEBUGGER_DEBUG} // 0,
+     levels_up    => 0,
+ );
 
 Can specify the level at which to perform an eval
 in relation to the level of this function call:
