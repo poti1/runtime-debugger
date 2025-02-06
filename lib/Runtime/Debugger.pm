@@ -882,6 +882,7 @@ sub _to_peek {
     my $is_curly_close = qr{ \} }x;    # To make my editor happy.
 
     if ( $repl->debug ) {
+        say "";
         say "var:   $var";
         say "name:  $name";
         say "sigil: $sigil";
@@ -904,8 +905,7 @@ sub _to_peek {
     my $val = sprintf( '$%s::PEEKS{qq(%s)}', __PACKAGE__, quotemeta( $var ), );
 
     if ( $repl->debug ) {
-        say "";
-        say "var2   $var";
+        say "var2:  $var";
         say "ref:   $ref";
     }
 
@@ -922,7 +922,11 @@ sub _to_peek {
         $val = "${sigil}{$val}";
     }
     else {
-        return $var;
+        $val = $var;
+    }
+
+    if ( $repl->debug ) {
+        say "val:   $val";
     }
 
     $val;
@@ -984,7 +988,11 @@ sub _build_step {
 
     $input = $repl->_apply_peeks( $input );
 
-    say "input_after_step=[$input]" if $repl->debug;
+    if ( $repl->debug ) {
+        say "";
+        say "input_after_step=[$input]";
+        say "";
+    }
 
     $input;
 }
